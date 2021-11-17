@@ -41,23 +41,23 @@ contract TradingCards is ERC721, ERC721Enumerable, ERC721URIStorage, IERC721Rece
         
         IERC721(nftContract).safeTransferFrom(msg.sender, address(this), nftId);
 
-        stakedNftCounter++;
         STAKED_NFTS[stakedNftCounter] = StakedNft(nftContract, nftId, msg.sender, block.timestamp, duration, price, supply, 0, true);
         nftToStakeId[nftContract][nftId] = stakedNftCounter;
+        stakedNftCounter++;
+
     }
     
     function unstakeNft(address nftContract, uint256 nftId) external {
         require(block.timestamp > STAKED_NFTS[nftToStakeId[nftContract][nftId]].timestamp + STAKED_NFTS[nftToStakeId[nftContract][nftId]].duration, "Staking period not over yet");
         require(STAKED_NFTS[nftToStakeId[nftContract][nftId]].inVault == true, "Nft already unstaked");
-        require(STAKED_NFTS[nftToStakeId[nftContract][nftId]].owner == msg.sender, "Only the original nft staker can unstake");
+        require(STAKED_NFTS[nftToStakeId[nftContract][nftId]].owner == address(msg.sender), "Only the original nft staker can unstake");
 
         STAKED_NFTS[nftToStakeId[nftContract][nftId]].inVault = false;
-        IERC721(nftContract).safeTransferFrom(msg.sender, address(this), nftId);
+        IERC721(nftContract).safeTransferFrom(address(this), msg.sender, nftId);
         
         uint256 totalRevenue = STAKED_NFTS[nftToStakeId[nftContract][nftId]].copies * STAKED_NFTS[nftToStakeId[nftContract][nftId]].price;
-        uint256 earnedFee = address(this).balance * totalRevenue;
         
-        payable(msg.sender).transfer(earnedFee);
+        payable(msg.sender).transfer(totalRevenue);
     }
     
     
@@ -72,7 +72,9 @@ contract TradingCards is ERC721, ERC721Enumerable, ERC721URIStorage, IERC721Rece
         
         uint256 stakedNftId = nftToStakeId[nftContract][nftId];
         
-        STAKED_NFTS[stakedNftId].copies++;
+        StakedNft storage updated_staked_nft = STAKED_NFTS[stakedNftId];
+        updated_staked_nft.copies = updated_staked_nft.copies + 1;
+
         mintedNftToSourceNft[mintedNftCounter] = stakedNftId;
     }
     

@@ -121,54 +121,47 @@ describe('Trading Card Contract', function () {
   })
 
   describe('Minting', function () {
-    it('Should not let user mint if paying above price', async function () {
-      const price = 100
+    beforeEach(async function () {
+      let price = 100
       await tradingCards.whitelistAddress(testApeToken.address)
       await testApeToken.safeMint(owner.address)
       await testApeToken.setApprovalForAll(tradingCards.address, true)
       await tradingCards.stakeNft(testApeToken.address, 0, 901, price, 1)
+    })
 
+    it('Should let user to mint if exact price is paid', async function () {
+      expect(
+        await tradingCards.buyTradingCard(testApeToken.address, 0, {
+          value: 100,
+        }),
+      ).to.changeEtherBalance(tradingCards, 100)
+      expect(await tradingCards.balanceOf(owner.address)).to.equal(1)
+    })
+
+    it('Should not let user mint if paying above price', async function () {
       await expect(
         tradingCards.buyTradingCard(testApeToken.address, 0, {
-          value: price + 1,
+          value: 101,
         }),
       ).to.revertedWith('Incorrect amount of funds sent')
     })
 
     it('Should not let user mint if below price', async function () {
-      const price = 100
-      await tradingCards.whitelistAddress(testApeToken.address)
-      await testApeToken.safeMint(owner.address)
-      await testApeToken.setApprovalForAll(tradingCards.address, true)
-      await tradingCards.stakeNft(testApeToken.address, 0, 901, price, 1)
-
       await expect(
         tradingCards.buyTradingCard(testApeToken.address, 0, {
-          value: price - 1,
+          value: 99,
         }),
       ).to.revertedWith('Incorrect amount of funds sent')
     })
 
     it('Should not let user mint for free', async function () {
-      const price = 100
-      await tradingCards.whitelistAddress(testApeToken.address)
-      await testApeToken.safeMint(owner.address)
-      await testApeToken.setApprovalForAll(tradingCards.address, true)
-      await tradingCards.stakeNft(testApeToken.address, 0, 901, price, 1)
-
       await expect(
         tradingCards.buyTradingCard(testApeToken.address, 0),
       ).to.revertedWith('Incorrect amount of funds sent')
     })
 
     it('Should not let user mint if duration is exceeded', async function () {
-      await tradingCards.whitelistAddress(testApeToken.address)
-      await testApeToken.safeMint(owner.address)
-      await testApeToken.setApprovalForAll(tradingCards.address, true)
-      await tradingCards.stakeNft(testApeToken.address, 0, 901, 100, 1)
-
       ethers.provider.send('evm_increaseTime', [1200])
-
       await expect(
         tradingCards.buyTradingCard(testApeToken.address, 0, {
           value: 100,
@@ -176,20 +169,68 @@ describe('Trading Card Contract', function () {
       ).to.be.revertedWith('Nft minting window has passed')
     })
 
-    it('Should let user to mint if exact price is paid', async function () {
-      const price = 100
+    it('Should not let users mint beyond the supply cap', async function () {
+      expect(
+        await tradingCards.buyTradingCard(testApeToken.address, 0, {
+          value: 100,
+        }),
+      ).to.changeEtherBalance(tradingCards, 100)
+      expect(await tradingCards.balanceOf(owner.address)).to.equal(1)
+      await expect(
+        tradingCards.buyTradingCard(testApeToken.address, 0, {
+          value: 100,
+        }),
+      ).to.be.revertedWith('Nft has reached supply cap')
+    })
+  })
+
+  describe('Unstaking', async function () {
+    beforeEach(async function () {
+      let price = 100
       await tradingCards.whitelistAddress(testApeToken.address)
       await testApeToken.safeMint(owner.address)
       await testApeToken.setApprovalForAll(tradingCards.address, true)
       await tradingCards.stakeNft(testApeToken.address, 0, 901, price, 1)
 
+      await tradingCards.buyTradingCard(testApeToken.address, 0, {
+        value: 100,
+      })
+    })
+
+    it('Should not let owner unstake until end of duration time', async function () {
+      await expect(
+        tradingCards.unstakeNft(testApeToken.address, 0),
+      ).to.be.revertedWith('Staking period not over yet')
+    })
+
+    it('Should let owner unstake after end of duration time', async function () {
+      ethers.provider.send('evm_increaseTime', [1200])
+
+      expect(await tradingCards.unstakeNft(testApeToken.address, 0))
+    })
+
+    it('Should only let owner unstake after end of duration time', async function () {
+      ethers.provider.send('evm_increaseTime', [1200])
+
+      await expect(
+        tradingCards.connect(addr1).unstakeNft(testApeToken.address, 0),
+      ).to.be.revertedWith('Only the original nft staker can unstake')
+    })
+
+    it('Should transfer earned revenue to owner after unstaking', async function () {
+      ethers.provider.send('evm_increaseTime', [1200])
+
       expect(
-        await tradingCards.buyTradingCard(testApeToken.address, 0, {
-          value: price,
-        }),
-      ).to.changeEtherBalance(tradingCards, price)
+        await tradingCards.unstakeNft(testApeToken.address, 0),
+      ).to.changeEtherBalance(tradingCards, -100)
+    })
+
+    it('Should transfer staked nft back to owner after unstaking', async function () {
+      ethers.provider.send('evm_increaseTime', [1200])
+
+      expect(await testApeToken.ownerOf(0)).to.equal(tradingCards.address)
+      expect(await tradingCards.unstakeNft(testApeToken.address, 0))
+      expect(await testApeToken.ownerOf(0)).to.equal(owner.address)
     })
   })
-
-  //describe('Unstaking', async function () {})
 })

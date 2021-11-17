@@ -37,6 +37,9 @@ module.exports = {
       outline: {
         blue: '0px solid #0000ff',
       },
+      zIndex: {
+        '-10': '-10',
+      },
     },
   },
   variants: {

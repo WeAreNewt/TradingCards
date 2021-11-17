@@ -31,12 +31,23 @@ const post = {
 }
 
 export default function Example(props) {
-  const { nft } = props
+  const { nft, rarity } = props
   return (
-    <div className="w-full relative">
+    <div
+      className={`w-full relative ${
+        nft.metadata
+          ? ''
+          : 'border-gray-200 border-4 z-50 rounded-lg border-dashed '
+      } `}
+    >
+      {!nft.metadata && <div className="w-full h-64" />}
+      {!nft.metadata && <div className="w-full h-52" />}
+
       <div
         key={post.title}
-        className="z-30 flex flex-col rounded-lg shadow-lg overflow-hidden p-2 bg-white absolute"
+        className={`${
+          nft.metadata ? '' : 'hidden '
+        } z-30 flex flex-col rounded-lg shadow-lg overflow-hidden p-2 bg-white absolute`}
         style={{
           backgroundImage: `url(${C4})`,
           backgroundRepeat: 'no-repeat',
@@ -62,20 +73,20 @@ export default function Example(props) {
             <div
               className="flex-1 bg-gradient-to-r from-gray-300 via-gray-200 to-gray-300 p-1 rounded-xl "
               style={{
-                backgroundImage: `url(${sticker})`,
+                backgroundImage: `url(${C4})`,
                 backgroundRepeat: 'no-repeat',
                 backgroundSize: 'Cover',
                 backgroundPosition: 'Center',
               }}
             >
-              <div className="flex-1 bg-white rounded-xl py-1">
-                <a href={post.href} className="block ">
-                  <p className="text-xl px-2 pt-1 pb-1 font-semibold text-gray-900 border-b-2 border-dashed border-gray-200 ">
+              <div className="flex-1 bg-white rounded-xl">
+                <div className="block ">
+                  <p className=" rounded-t-xl text-xl px-2 pt-2 pb-1 font-semibold text-gray-900 border-b-2 border-dashed border-gray-200 ">
                     <div className="bg-clip-text text-transparent bg-gradient-to-r from-sky-800 via-blue-400 to-sky-800">
                       BAYC #2467 Trading Card
                     </div>
                   </p>
-                  <p className="px-2 text-base text-gray-500 flex flex-col space-y-0 mr-6 pt-1">
+                  <p className="px-2 pb-1 text-base text-gray-500 flex flex-col space-y-0 mr-6 pt-1">
                     <div className="group flex items-center px-3 py-1 pt-1 text-sm font-medium rounded-md cursor-pointer">
                       <LightningBoltIcon className="text-yellow-500 flex-shrink-0 -ml-1 mr-3 h-6 w-6" />
                       <div className="text-gray-700 text-md">
@@ -89,7 +100,7 @@ export default function Example(props) {
                       </div>
                     </div>
                   </p>
-                </a>
+                </div>
               </div>
             </div>
 
@@ -113,7 +124,7 @@ export default function Example(props) {
                     <div>2476/8000</div>
                   </div>
                   <div className="flex w-full justify-end items-end space-x-1 text-sm text-gray-500">
-                    1/20
+                    1/{rarity ? rarity.supply : 100}
                   </div>
                 </div>
               </div>
@@ -122,9 +133,12 @@ export default function Example(props) {
         </div>
       </div>
 
+      {/*
       <div
         key={post.title}
-        className="z-40 flex flex-col rounded-lg shadow-lg overflow-hidden p-2 bg-white transform translate-x-6 translate-y-4"
+        className={`${
+          nft.metadata ? 'z-40' : 'hidden '
+        } flex flex-col rounded-lg shadow-lg overflow-hidden p-2 bg-white transform translate-x-6 translate-y-4`}
         style={{
           backgroundImage: `url(${C5})`,
           backgroundRepeat: 'no-repeat',
@@ -182,6 +196,7 @@ export default function Example(props) {
           </div>
         </div>
       </div>
+      */}
     </div>
   )
 }

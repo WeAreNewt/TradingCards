@@ -1,6 +1,60 @@
 import Web3 from 'web3'
 import axios from 'axios'
 import erc721_abi from '../assets/abis/erc721'
+import staking_abi from '../assets/abis/staking'
+
+const TRADING_CARDS_ROPSTEN = '0xf387006069bd8350b736f5590fa6a3eA126dB254'
+
+export const giveApproval = (wallet, nftAddress, rarity) => {
+  return new Promise(async (resolve, reject) => {
+    if (window.ethereum) {
+      try {
+        const web3 = new Web3(window.ethereum)
+        const nftContract = new web3.eth.Contract(erc721_abi, nftAddress)
+
+        const TRADING_CARDS_ROPSTEN =
+          '0xf387006069bd8350b736f5590fa6a3eA126dB254'
+        await nftContract.methods
+          .setApprovalForAll(TRADING_CARDS_ROPSTEN, true)
+          .send({ from: wallet })
+      } catch (error) {
+        reject(error)
+      }
+      resolve(true)
+    } else {
+      reject('No injected web3 in browser')
+    }
+  })
+}
+
+export const stakeNft = (wallet, nftAddress, nftId) => {
+  return new Promise(async (resolve, reject) => {
+    if (window.ethereum) {
+      try {
+        const web3 = new Web3(window.ethereum)
+        const nftContract = new web3.eth.Contract(
+          staking_abi,
+          TRADING_CARDS_ROPSTEN,
+        )
+
+        await nftContract.methods
+          .stakeNft(
+            nftAddress,
+            nftId,
+            9600000001,
+            web3.utils.toBN('1000000000000000000'),
+            100,
+          )
+          .send({ from: wallet })
+      } catch (error) {
+        reject(error)
+      }
+      resolve(true)
+    } else {
+      reject('No injected web3 in browser')
+    }
+  })
+}
 
 export const getNftBalance = (wallet, nftAddress) => {
   return new Promise(async (resolve, reject) => {

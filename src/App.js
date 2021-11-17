@@ -10,6 +10,7 @@ import {
 import { getNftBalance } from './utils/helpers'
 import PreviewCard from './components/PreviewCard'
 import Stepper from './Stepper.js'
+import Wizard from './components/Wizard'
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
 }
@@ -23,12 +24,25 @@ const KovanContracts = [
 ]
 
 function App() {
+  const [isWrongChain, setIsWrongChain] = useState(false)
+
   const [isLoading, setIsLoading] = useState(true)
   const [isConnected, setIsConnected] = useState(false)
   const [navigation, setNavigation] = useState('Card Maker')
 
+  const [account, setAccount] = useState('')
   const [collections, setCollections] = useState([])
-  const [selectedNft, setSelectedNft] = useState({})
+
+  useEffect(() => {
+    window.ethereum.request({ method: 'eth_chainId' }).then((chainId) => {
+      if (chainId !== '0x2') {
+        setIsWrongChain(true)
+      }
+    })
+
+    window.ethereum.on('accountsChanged', () => window.location.reload())
+    window.ethereum.on('chainChanged', () => window.location.reload())
+  }, [])
 
   useEffect(async () => {
     if (window.ethereum) {
@@ -48,6 +62,7 @@ function App() {
 
         setCollections(balances[0].balance)
 
+        setAccount(accounts[0])
         setIsConnected(true)
       } else {
         setIsConnected(false)
@@ -112,64 +127,7 @@ function App() {
             </div>
 
             {navigation === 'Card Maker' && (
-              <main className="lg:col-span-9 xl:col-span-6">
-                <h2 className="text-4xl mb-4 font-extrabold text-gray-900 sm:pr-12">
-                  TCG Wizard
-                </h2>
-
-                <Stepper />
-
-                <ul
-                  role="list"
-                  className="grid grid-cols-2 bg-white p-4 rounded-lg gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-4 xl:gap-x-8"
-                >
-                  {collections.map((file) => (
-                    <li
-                      onClick={() => setSelectedNft(file)}
-                      key={file.tokenId}
-                      className="relative"
-                    >
-                      <div className="group block w-full aspect-w-10 aspect-h-10 rounded-lg bg-gray-100 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-offset-gray-100 focus-within:ring-indigo-500 overflow-hidden">
-                        <img
-                          src={file.metadata.json.image}
-                          alt=""
-                          className="object-cover pointer-events-none group-hover:opacity-75"
-                        />
-                        <button
-                          type="button"
-                          className="absolute inset-0 focus:outline-none"
-                        >
-                          <span className="sr-only">
-                            View details for {file.name}
-                          </span>
-                        </button>
-                      </div>
-                      <p className="mt-2 block text-sm font-medium text-gray-900 truncate pointer-events-none">
-                        BAYC: #{file.tokenId}
-                      </p>
-                      <p className="block text-sm font-medium text-gray-500 pointer-events-none">
-                        {file.tokenId}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              </main>
-            )}
-
-            {navigation !== 'Contract Calls' && (
-              <aside className="hidden xl:block xl:col-span-4">
-                <div className="sticky top-4 space-y-4">
-                  <h2 className="px-6 text-4xl font-extrabold text-gray-900 sm:pr-12">
-                    Card Preview
-                  </h2>
-
-                  {selectedNft.tokenId && (
-                    <div className="width-full px-6 bg-gray-100 rounded-lg">
-                      <PreviewCard nft={selectedNft} />
-                    </div>
-                  )}
-                </div>
-              </aside>
+              <Wizard wallet={account} collections={collections} />
             )}
           </div>
         </div>
