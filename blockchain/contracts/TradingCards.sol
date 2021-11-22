@@ -8,6 +8,10 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract TradingCards is ERC721, ERC721Enumerable, ERC721URIStorage, IERC721Receiver, Ownable {
+    event NftWhitelisted (address indexed nftContract);
+    event NftStaked (address indexed nftContract, uint256 indexed nftId, address indexed nftOwner, uint256 supply, uint256 price); //maybe indexed should be nftContract cardId and owner?
+    event CardBought (address indexed nftContract, uint256 indexed nftId, uint256 indexed cardId);
+
     struct StakedNft {
         address tokenContract;
         uint256 tokenId;
@@ -36,7 +40,6 @@ contract TradingCards is ERC721, ERC721Enumerable, ERC721URIStorage, IERC721Rece
     function stakeNft(address nftContract, uint256 nftId, uint256 duration, uint256 price, uint256 supply) external {
         require(NFT_WHITELIST[nftContract] == true, "Target nft is not whitelisted for staking");
         require(duration > 60, "Staking duration must be longer than 1 minute");
-        require(price > 0, "Price must be greater than 1 Wei");
         require(supply > 0, "Supply must be atleast 1");
         
         IERC721(nftContract).safeTransferFrom(msg.sender, address(this), nftId);
@@ -45,6 +48,7 @@ contract TradingCards is ERC721, ERC721Enumerable, ERC721URIStorage, IERC721Rece
         nftToStakeId[nftContract][nftId] = stakedNftCounter;
         stakedNftCounter++;
 
+        emit NftStaked(nftContract, nftId, address(msg.sender), supply, price);
     }
     
     function unstakeNft(address nftContract, uint256 nftId) external {
@@ -76,10 +80,13 @@ contract TradingCards is ERC721, ERC721Enumerable, ERC721URIStorage, IERC721Rece
         updated_staked_nft.copies = updated_staked_nft.copies + 1;
 
         mintedNftToSourceNft[mintedNftCounter] = stakedNftId;
+
+        emit CardBought(nftContract, nftId, stakedNftId);
     }
     
     function whitelistAddress(address nftContract) public onlyOwner {
         NFT_WHITELIST[nftContract] = true;
+        emit NftWhitelisted(nftContract);
     }
     
     function _baseURI() internal view override returns (string memory) {

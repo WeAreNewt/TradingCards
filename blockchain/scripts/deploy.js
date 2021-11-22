@@ -8,6 +8,7 @@ async function main() {
   console.log('Account balance:', (await deployer.getBalance()).toString())
 
   const TradingCards = await ethers.getContractFactory('TradingCards')
+  console.log(TradingCards.bytecode)
   const tradingCards = await TradingCards.deploy()
   await tradingCards.deployed()
   console.log('tradingCards address:', tradingCards.address)

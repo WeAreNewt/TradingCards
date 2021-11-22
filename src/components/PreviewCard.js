@@ -31,7 +31,7 @@ const post = {
 }
 
 export default function Example(props) {
-  const { nft, rarity } = props
+  const { nft, rarity, price } = props
   return (
     <div
       className={`w-full relative ${
@@ -40,7 +40,11 @@ export default function Example(props) {
           : 'border-gray-200 border-4 z-50 rounded-lg border-dashed '
       } `}
     >
-      {!nft.metadata && <div className="w-full h-64" />}
+      {!nft.metadata && (
+        <div className="w-full h-64 flex flex-col items-center justify-end pb-12 text-gray-300">
+          Select an nft to see a preview
+        </div>
+      )}
       {!nft.metadata && <div className="w-full h-52" />}
 
       <div
@@ -90,13 +94,17 @@ export default function Example(props) {
                     <div className="group flex items-center px-3 py-1 pt-1 text-sm font-medium rounded-md cursor-pointer">
                       <LightningBoltIcon className="text-yellow-500 flex-shrink-0 -ml-1 mr-3 h-6 w-6" />
                       <div className="text-gray-700 text-md">
-                        Ape has been traded 8 times
+                        {/* Ape has been traded 8 times */}
+                        Ape was locked for {rarity.duration}{' '}
+                        {rarity.durationType}
                       </div>
                     </div>
                     <div className="group flex items-center px-3 py-1 pt-0 text-sm font-medium rounded-md cursor-pointer pb-2 ">
                       <CreditCardIcon className="text-lime-600 flex-shrink-0 -ml-1 mr-3 h-6 w-6" />
-                      <div className="text-gray-700 text-md overflow-hidden whitespace-nowrap">
-                        Ape has made 328 Eth in sales
+                      <div className="text-gray-700 text-md overflow-hidden whitespace-nowrap w-48">
+                        {/* Ape has made 328 Eth in sales */}
+                        Card cost {price ? Number(price).toFixed(3) : '_'} ETH
+                        to mint
                       </div>
                     </div>
                   </p>
@@ -104,7 +112,10 @@ export default function Example(props) {
               </div>
             </div>
 
-            <div className="mt-2 flex items-centershadow-sm rounded-md p-2 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200">
+            <div
+              className="mt-2 flex items-centershadow-sm rounded-md p-2 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200"
+              style={rarity ? rarity.background : {}}
+            >
               <div className="flex-shrink-0">
                 <a href={post.author.href}>
                   <span className="sr-only">{post.author.name}</span>

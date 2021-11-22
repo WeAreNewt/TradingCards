@@ -74,21 +74,6 @@ describe('Trading Card Contract', function () {
       expect(await testApeToken.ownerOf(0)).to.equal(tradingCards.address)
     })
 
-    it('Should not allow nft to be staked if price is 0', async function () {
-      const price = 0
-      await tradingCards.whitelistAddress(testApeToken.address)
-      await testApeToken.safeMint(owner.address)
-      await testApeToken.setApprovalForAll(tradingCards.address, true)
-
-      expect(await testApeToken.ownerOf(0)).to.equal(owner.address)
-
-      await expect(
-        tradingCards.stakeNft(testApeToken.address, 0, 901, price, 1),
-      ).to.be.revertedWith('Price must be greater than 1 Wei')
-
-      expect(await testApeToken.ownerOf(0)).to.equal(owner.address)
-    })
-
     it('Should not allow nft to be staked if duration is less than a minute', async function () {
       const duration = 1
       await tradingCards.whitelistAddress(testApeToken.address)
