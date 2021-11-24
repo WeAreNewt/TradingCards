@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.2;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract TradingCards is ERC721, ERC721Enumerable, ERC721URIStorage, IERC721Receiver, Ownable {
+contract TradingCards is Initializable, ERC721Upgradeable, IERC721ReceiverUpgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, OwnableUpgradeable {
     event NftWhitelisted (address indexed nftContract);
-    event NftStaked (address indexed nftContract, uint256 indexed nftId, address indexed nftOwner, uint256 supply, uint256 price, uint256 duration); //maybe indexed should be nftContract cardId and owner?
-    event CardBought (address indexed nftContract, uint256 indexed nftId, uint256 indexed cardId);
+    event NftStaked (uint256 indexed cardId, address indexed nftContract, address indexed nftOwner, uint256 nftId, uint256 price, uint256 rarity);
+    event CardBought (uint256 indexed cardId, address indexed nftContract, address indexed nftOwner, uint256 nftId);
 
     struct StakedNft {
         address tokenContract;
@@ -29,75 +31,95 @@ contract TradingCards is ERC721, ERC721Enumerable, ERC721URIStorage, IERC721Rece
     
     mapping (address => bool) public NFT_WHITELIST;
     mapping (uint256 => StakedNft) public STAKED_NFTS;
-    mapping (address => mapping (uint256 => uint256)) public nftToStakeId;
-    mapping (uint256 => uint256) public mintedNftToSourceNft;
+    mapping (uint256 => uint256) public cardToStakedNft;
     
     string public BASE_URI = "https://l2g.eu.ngrok.io/metadata/";
 
-    constructor() ERC721("L2GraphsTest", "L2GT") {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer {}
+
+    function initialize() initializer public {
+        __ERC721_init("MyToken", "MTK");
+        __ERC721Enumerable_init();
+        __ERC721URIStorage_init();
+        __Ownable_init();
     }
 
-    function _rarityParams(uint256 tier) pure returns(uint256 supply, uint256 duration) {
-        if (tier == 0) {
-            // SILVER => {supply: 100, duration: 12 hours}
-            return (100,43200); 
-        } else if (tier == 1) {
-            // GOLD => {supply: 10, duration: 24 hours}
-            return (10,86400);
-        } else if (tier == 2) {
-            // PLATINUM => {supply: 3, duration: 3 days}
-            return (3, 259200);
-        } else if (tier == 3) {
-            // TITANIUM => {supply: 1, duration: 1 weel}
-            return (1, 604800);
+    function _raritySupply(uint256 rarity) public pure returns(uint256 supply) {
+        if (rarity == 0) {
+            // SILVER => supply: 100
+            return (100); 
+        } else if (rarity == 1) {
+            // GOLD => supply: 10
+            return (10);
+        } else if (rarity == 2) {
+            // PLATINUM => supply: 3
+            return (3);
+        } else if (rarity == 3) {
+            // TITANIUM => supply: 1
+            return (1);
         }
     }
 
-    function stakeNft(address nftContract, uint256 nftId, uint256 duration, uint256 price, uint256 supply) external {
+    function _rarityDuration(uint256 rarity) public pure returns(uint256 duration) {
+        if (rarity == 0) {
+            // SILVER => duration: 12 hours
+            return (43200); 
+        } else if (rarity == 1) {
+            // GOLD => duration: 24 hours
+            return (86400);
+        } else if (rarity == 2) {
+            // PLATINUM => duration: 3 days
+            return (259200);
+        } else if (rarity == 3) {
+            // TITANIUM => duration: 1 week
+            return (604800);
+        }
+    }
+
+    function stakeNft(address nftContract, uint256 nftId, uint256 price, uint256 rarity) external {
         require(NFT_WHITELIST[nftContract] == true, "Target nft is not whitelisted for staking");
-        require(duration > 60, "Staking duration must be longer than 1 minute");
-        require(supply > 0, "Supply must be atleast 1");
         
         IERC721(nftContract).safeTransferFrom(msg.sender, address(this), nftId);
+        STAKED_NFTS[stakedNftCounter] = StakedNft(nftContract, nftId, msg.sender, block.timestamp, _raritySupply(rarity), price, _raritySupply(rarity), 0, true);
 
-        STAKED_NFTS[stakedNftCounter] = StakedNft(nftContract, nftId, msg.sender, block.timestamp, duration, price, supply, 0, true);
-        nftToStakeId[nftContract][nftId] = stakedNftCounter;
+        emit NftStaked(stakedNftCounter, nftContract, address(msg.sender), nftId, price, rarity);
         stakedNftCounter++;
-
-        emit NftStaked(nftContract, nftId, address(msg.sender), supply, price, duration);
     }
     
-    function unstakeNft(address nftContract, uint256 nftId) external {
-        require(block.timestamp > STAKED_NFTS[nftToStakeId[nftContract][nftId]].timestamp + STAKED_NFTS[nftToStakeId[nftContract][nftId]].duration, "Staking period not over yet");
-        require(STAKED_NFTS[nftToStakeId[nftContract][nftId]].inVault == true, "Nft already unstaked");
-        require(STAKED_NFTS[nftToStakeId[nftContract][nftId]].owner == address(msg.sender), "Only the original nft staker can unstake");
+    function unstakeNft(uint256 cardId) external {
+        StakedNft memory targetCard = STAKED_NFTS[cardId];
+        require(block.timestamp > targetCard.timestamp + targetCard.duration, "Staking period not over yet");
+        require(targetCard.inVault == true, "Nft already unstaked");
+        require(targetCard.owner == address(msg.sender), "Only the original nft staker can unstake");
 
-        STAKED_NFTS[nftToStakeId[nftContract][nftId]].inVault = false;
-        IERC721(nftContract).safeTransferFrom(address(this), msg.sender, nftId);
-        
-        uint256 totalRevenue = STAKED_NFTS[nftToStakeId[nftContract][nftId]].copies * STAKED_NFTS[nftToStakeId[nftContract][nftId]].price;
+        targetCard.inVault = false;
+        IERC721(targetCard.tokenContract).safeTransferFrom(address(this), msg.sender, targetCard.tokenId);
+        uint256 totalRevenue = targetCard.copies * targetCard.price;
         
         payable(msg.sender).transfer(totalRevenue);
     }
     
     
-    function buyTradingCard(address nftContract, uint256 nftId) external payable {
-        require(STAKED_NFTS[nftToStakeId[nftContract][nftId]].inVault == true, "Nft is no longer staked");
-        require(block.timestamp < STAKED_NFTS[nftToStakeId[nftContract][nftId]].timestamp + STAKED_NFTS[nftToStakeId[nftContract][nftId]].duration, "Nft minting window has passed");
-        require(STAKED_NFTS[nftToStakeId[nftContract][nftId]].copies < STAKED_NFTS[nftToStakeId[nftContract][nftId]].supply, "Nft has reached supply cap");
-        require(msg.value == STAKED_NFTS[nftToStakeId[nftContract][nftId]].price, "Incorrect amount of funds sent");
+    function buyTradingCard(uint256 cardId) external payable {
+        StakedNft memory targetCard = STAKED_NFTS[cardId];
+        require(targetCard.inVault == true, "Nft is no longer staked");
+        require(block.timestamp < targetCard.timestamp + targetCard.duration, "Nft minting window has passed");
+        require(targetCard.copies < targetCard.supply, "Nft has reached supply cap");
+        require(msg.value == targetCard.price, "Incorrect amount of funds sent");
 
+        STAKED_NFTS[cardId].copies++;
         mintedNftCounter++;
+
         _safeMint(msg.sender, mintedNftCounter);
-        
-        uint256 stakedNftId = nftToStakeId[nftContract][nftId];
-        
-        StakedNft storage updated_staked_nft = STAKED_NFTS[stakedNftId];
-        updated_staked_nft.copies = updated_staked_nft.copies + 1;
 
-        mintedNftToSourceNft[mintedNftCounter] = stakedNftId;
+        cardToStakedNft[mintedNftCounter] = cardId;
 
-        emit CardBought(nftContract, nftId, stakedNftId);
+        emit CardBought(cardId, targetCard.tokenContract, targetCard.owner, targetCard.tokenId);
+    }
+
+    function getCardInfo(uint256 cardId) external view returns(StakedNft memory cardInfo) {
+        return STAKED_NFTS[cardId];
     }
     
     function whitelistAddress(address nftContract) public onlyOwner {
@@ -112,39 +134,42 @@ contract TradingCards is ERC721, ERC721Enumerable, ERC721URIStorage, IERC721Rece
     function setBaseUri(string memory _newUri) external onlyOwner {
         BASE_URI = _newUri;
     }
-
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId)
-        internal
-        override(ERC721, ERC721Enumerable)
-    {
-        super._beforeTokenTransfer(from, to, tokenId);
-    }
-
-    function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
-        super._burn(tokenId);
-    }
-
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override(ERC721, ERC721URIStorage)
-        returns (string memory)
-    {
-        return super.tokenURI(tokenId);
-    }
     
     function onERC721Received(
         address operator, 
         address from, 
         uint256 tokenId, 
         bytes calldata data) external override returns (bytes4) {
-        return IERC721Receiver.onERC721Received.selector;
+        return IERC721ReceiverUpgradeable.onERC721Received.selector;
     } 
-    
+
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
+        returns (string memory)
+    {
+        return super.tokenURI(tokenId);
+    }
+
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId)
+        internal
+        override(ERC721Upgradeable, ERC721EnumerableUpgradeable)
+    {
+        super._beforeTokenTransfer(from, to, tokenId);
+    }
+
+    function _burn(uint256 tokenId)
+        internal
+        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
+    {
+        super._burn(tokenId);
+    }
+
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721, ERC721Enumerable)
+        override(ERC721Upgradeable, ERC721EnumerableUpgradeable)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
