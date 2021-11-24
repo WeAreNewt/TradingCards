@@ -100,7 +100,6 @@ contract TradingCards is Initializable, ERC721Upgradeable, IERC721ReceiverUpgrad
         payable(msg.sender).transfer(totalRevenue);
     }
     
-    
     function buyTradingCard(uint256 cardId) external payable {
         StakedNft memory targetCard = STAKED_NFTS[cardId];
         require(targetCard.inVault == true, "Nft is no longer staked");
