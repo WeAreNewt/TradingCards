@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
-import { getNftMetadata, buyCard } from '../utils/helpers'
+import { getNftMetadata } from '../utils/helpers'
 import { COLLECTIONS, RARITY_TIERS } from '../utils/constants'
 import { ChevronRightIcon, HomeIcon } from '@heroicons/react/solid'
 import PreviewCard from '../components/PreviewCard'
@@ -11,11 +11,9 @@ const pages = [
 ]
 
 export default function CollectionPage(props) {
-  const { wallet, state, allCards, isAllCardsLoading } = props
+  const { state, allCards, isAllCardsLoading } = props
   let location = useLocation()
   let navigate = useNavigate()
-
-  const [isBuyingTradingCard, setIsBuyingTradingCard] = useState(false)
 
   const [isLoadingCollectionMeta, setIsLoadingCollectionMeta] = useState(
     state ? false : true,
@@ -76,18 +74,6 @@ export default function CollectionPage(props) {
       setIsCardsLoading(false)
     }
   }, [allCards, isAllCardsLoading])
-
-  const buyTradingCard = async (nftContract, nftId, price) => {
-    if (!isBuyingTradingCard) {
-      setIsBuyingTradingCard(true)
-      try {
-        buyCard(wallet, nftContract, nftId, price)
-      } catch (error) {
-        console.log(error)
-      }
-      setIsBuyingTradingCard(false)
-    }
-  }
   console.log('collection', collection)
   console.log('CollectionPage props', props)
   console.log('Cards', cards)
@@ -143,7 +129,7 @@ export default function CollectionPage(props) {
         </h2>
         <div className="h-full mt-6 grid grid-cols-1 gap-y-2 gap-x-6 px-6 sm:px-0 sm:grid-cols-3 lg:grid-cols-3 xl:gap-x-12">
           {cards.map((card) => (
-            <div className="relative" key={card.collection + card.tokenId}>
+            <div className="relative ">
               <div // Link
                 to={`/card/${collection.address}/${card.nftId}`}
                 state={{ collection, card }}
@@ -173,12 +159,7 @@ export default function CollectionPage(props) {
                       <div>{Number(card.price_eth).toFixed(2)} Ξ</div>
                     </h3>
                   </div>
-                  <button
-                    onClick={() =>
-                      buyTradingCard(collection.address, card.nftId, card.price)
-                    }
-                    className="bg-gray-300 text-gray-500 font-semibold text-md py-1 px-2 rounded-md hover:text-gray-700"
-                  >
+                  <button className="bg-gray-300 text-gray-500 font-semibold text-md py-1 px-2 rounded-md hover:text-gray-700">
                     Buy now
                   </button>
                 </div>

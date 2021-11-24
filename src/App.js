@@ -38,14 +38,14 @@ function App() {
   const [isCardsLoading, setIsCardsLoading] = useState(true)
   const [allCards, setAllCards] = useState([])
 
-  const loadCards = async () => {
+  const reloadCards = async () => {
     const cards = await getAllCards()
     setAllCards(cards)
     setIsCardsLoading(false)
   }
 
   useEffect(() => {
-    loadCards()
+    reloadCards()
 
     window.ethereum.request({ method: 'eth_chainId' }).then((chainId) => {
       if (chainId !== '0x3') {
@@ -58,6 +58,10 @@ function App() {
   }, [])
 
   useEffect(async () => {
+    reloadBalances()
+  }, [])
+
+  const reloadBalances = async () => {
     if (window.ethereum) {
       const accounts = await window.ethereum.request({
         method: 'eth_accounts',
@@ -87,7 +91,7 @@ function App() {
         setIsConnected(false)
       }
     }
-  }, [])
+  }
 
   return (
     <>
@@ -110,16 +114,17 @@ function App() {
               </div>
               <div className="hidden ml-10 space-x-8 lg:block">
                 {[
-                  { name: '', title: 'Home', icon: HomeIcon },
                   {
                     name: 'explore',
                     title: 'Explore',
-                    icon: LibraryIcon,
+                  },
+                  {
+                    name: 'collection',
+                    title: 'Collection',
                   },
                   {
                     name: 'wizard',
-                    title: 'Card Maker',
-                    icon: ClipboardListIcon,
+                    title: 'Wizard',
                   },
                 ].map((link) => (
                   <Link
@@ -155,21 +160,27 @@ function App() {
                     </div>
                     <div className="mt-24 grid grid-cols-1 gap-y-4 gap-x-6 sm:grid-cols-2 lg:grid-cols-2 xl:gap-x-8">
                       <div className="w-full h-full flex flex-col justify-start items-center">
-                        <div className="w-60 h-60 bg-gray-400"></div>
+                        <Link
+                          to="/explore"
+                          className="w-60 h-60 bg-gray-400 hover:bg-gray-300"
+                        ></Link>
                         <h4 className="mt-4 text-xl font-semibold text-gray-700 text-center">
                           Collect cards of your favorite NFTs!
                         </h4>
                         <div className="mt-4 w-full flex justify-center items-center">
                           <Link
                             to="/explore"
-                            className="bg-gray-200 px-8 py-2 text-lg text-gray-500 rounded-full hover:bg-gray-300 hover:text-gray-700"
+                            className="bg-gray-200 z-50 px-8 py-2 text-lg text-gray-500 rounded-full hover:bg-gray-300 hover:text-gray-700"
                           >
                             Explore
                           </Link>
                         </div>
                       </div>
                       <div className="w-full h-full flex flex-col justify-start items-center text-center">
-                        <div className="w-60 h-60 bg-gray-400"></div>
+                        <Link
+                          to="/wizard"
+                          className="w-60 h-60 bg-gray-400 hover:bg-gray-400"
+                        ></Link>
                         <h4 className="mt-4 text-xl font-semibold text-gray-700">
                           Earn money by licensing the IP you own!
                         </h4>
@@ -190,6 +201,7 @@ function App() {
                 path="/collection/:nftContract"
                 element={
                   <CollectionPage
+                    wallet={account}
                     allCards={allCards}
                     isCardsLoading={isCardsLoading}
                   />
@@ -262,6 +274,8 @@ function App() {
                     wallet={account}
                     isLoadingCollections={isLoadingCollections}
                     collections={collections}
+                    reloadBalances={reloadBalances}
+                    reloadCards={reloadCards}
                     connectButton={() => {
                       if (!account) {
                         return (

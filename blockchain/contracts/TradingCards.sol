@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract TradingCards is ERC721, ERC721Enumerable, ERC721URIStorage, IERC721Receiver, Ownable {
     event NftWhitelisted (address indexed nftContract);
-    event NftStaked (address indexed nftContract, uint256 indexed nftId, address indexed nftOwner, uint256 supply, uint256 price); //maybe indexed should be nftContract cardId and owner?
+    event NftStaked (address indexed nftContract, uint256 indexed nftId, address indexed nftOwner, uint256 supply, uint256 price, uint256 duration); //maybe indexed should be nftContract cardId and owner?
     event CardBought (address indexed nftContract, uint256 indexed nftId, uint256 indexed cardId);
 
     struct StakedNft {
@@ -37,6 +37,22 @@ contract TradingCards is ERC721, ERC721Enumerable, ERC721URIStorage, IERC721Rece
     constructor() ERC721("L2GraphsTest", "L2GT") {
     }
 
+    function _rarityParams(uint256 tier) pure returns(uint256 supply, uint256 duration) {
+        if (tier == 0) {
+            // SILVER => {supply: 100, duration: 12 hours}
+            return (100,43200); 
+        } else if (tier == 1) {
+            // GOLD => {supply: 10, duration: 24 hours}
+            return (10,86400);
+        } else if (tier == 2) {
+            // PLATINUM => {supply: 3, duration: 3 days}
+            return (3, 259200);
+        } else if (tier == 3) {
+            // TITANIUM => {supply: 1, duration: 1 weel}
+            return (1, 604800);
+        }
+    }
+
     function stakeNft(address nftContract, uint256 nftId, uint256 duration, uint256 price, uint256 supply) external {
         require(NFT_WHITELIST[nftContract] == true, "Target nft is not whitelisted for staking");
         require(duration > 60, "Staking duration must be longer than 1 minute");
@@ -48,7 +64,7 @@ contract TradingCards is ERC721, ERC721Enumerable, ERC721URIStorage, IERC721Rece
         nftToStakeId[nftContract][nftId] = stakedNftCounter;
         stakedNftCounter++;
 
-        emit NftStaked(nftContract, nftId, address(msg.sender), supply, price);
+        emit NftStaked(nftContract, nftId, address(msg.sender), supply, price, duration);
     }
     
     function unstakeNft(address nftContract, uint256 nftId) external {

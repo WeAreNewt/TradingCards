@@ -19,10 +19,7 @@ import {
   mintNft,
   getApproval,
 } from '../utils/helpers.js'
-import Silver from '../assets/images/silver.png'
-import Gold from '../assets/images/gold.png'
-import Platinum from '../assets/images/platinum.png'
-import Titanium from '../assets/images/titanium.png'
+import { RARITY_TIERS } from '../utils/constants'
 
 const steps = [
   { id: 1, name: 'Select NFT', href: '#', status: 'current' },
@@ -30,63 +27,7 @@ const steps = [
   { id: 3, name: 'Confirm', href: '#', status: 'upcoming' },
 ]
 
-const plans = [
-  {
-    name: 'Silver',
-    duration: '12',
-    durationType: 'hours',
-    supply: '100',
-    price: '0.01',
-    image: Silver,
-    background: {
-      backgroundImage: `url(${Silver})`,
-      backgroundRepeat: 'no-repeat',
-      backgroundSize: '100%',
-    },
-  },
-  {
-    name: 'Gold',
-    duration: '1',
-    durationType: 'day',
-    supply: '10',
-    price: '0.10',
-    image: Gold,
-    background: {
-      backgroundImage: `url(${Gold})`,
-      backgroundRepeat: 'no-repeat',
-      backgroundSize: '100%',
-    },
-  },
-  {
-    name: 'Platinum',
-    duration: '3',
-    durationType: 'days',
-    supply: '3',
-    price: '0.25',
-    image: Platinum,
-    background: {
-      backgroundImage: `url(${Platinum})`,
-      backgroundRepeat: 'no-repeat',
-      backgroundSize: '100%',
-    },
-  },
-  {
-    name: 'Titanium',
-    duration: '1',
-    durationType: 'week',
-    supply: '1',
-    price: '1.00',
-    image: Titanium,
-    background: {
-      backgroundImage: `url(${Titanium})`,
-      backgroundRepeat: 'no-repeat',
-      backgroundSize: '100%',
-    },
-  },
-]
-function classNames(...classes) {
-  return classes.filter(Boolean).join(' ')
-}
+const plans = RARITY_TIERS
 
 export default function Wizard(props) {
   const {
@@ -94,6 +35,8 @@ export default function Wizard(props) {
     isWrongChain,
     isLoadingCollections,
     collections,
+    reloadBalances,
+    reloadCards,
     connectButton,
   } = props
 
@@ -153,9 +96,11 @@ export default function Wizard(props) {
           selectedNft.collection,
           selectedNft.tokenId,
           selected,
+          price,
         )
         setIsMined(true)
         setIsMining(false)
+        reloadCards()
       } catch (error) {
         console.log(error)
         setIsMining(false)
@@ -178,7 +123,7 @@ export default function Wizard(props) {
 
   return (
     <>
-      <main className="lg:col-span-9 xl:col-span-6">
+      <main className="lg:col-span-9 xl:col-span-6 ">
         <h2 className="text-4xl mb-4 font-extrabold text-gray-900 sm:pr-12">
           TCG Wizard
         </h2>
@@ -336,7 +281,8 @@ export default function Wizard(props) {
                   } catch (error) {
                     setIsMintingNft(false)
                   }
-                  window.location.reload()
+                  await reloadBalances()
+                  setIsMintingNft(false)
                 }
               }}
               key="test ape"
@@ -391,7 +337,8 @@ export default function Wizard(props) {
                   } catch (error) {
                     setIsMintingCatNft(false)
                   }
-                  window.location.reload()
+                  await reloadBalances()
+                  setIsMintingCatNft(false)
                 }
               }}
               key="test ape"
@@ -764,6 +711,7 @@ export default function Wizard(props) {
           )}
         </div>
       </main>
+
       <aside className="hidden xl:block xl:col-span-4">
         <div className="sticky top-4 space-y-4">
           <h2 className="px-6 text-4xl font-extrabold text-gray-900 sm:pr-12">
@@ -771,7 +719,12 @@ export default function Wizard(props) {
           </h2>
 
           <div className="width-full px-6 bg-gray-100 rounded-lg">
-            <PreviewCard nft={selectedNft} rarity={selected} price={price} />
+            <PreviewCard
+              nft={selectedNft}
+              rarity={selected}
+              price={price}
+              isWizard={true}
+            />
           </div>
         </div>
       </aside>

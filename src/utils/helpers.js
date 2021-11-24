@@ -47,7 +47,7 @@ export const getApproval = (wallet, nftAddress) => {
   })
 }
 
-export const stakeNft = (wallet, nftAddress, nftId) => {
+export const stakeNft = (wallet, nftAddress, nftId, rarityParams, price) => {
   return new Promise(async (resolve, reject) => {
     if (window.ethereum) {
       try {
@@ -61,9 +61,9 @@ export const stakeNft = (wallet, nftAddress, nftId) => {
           .stakeNft(
             nftAddress,
             nftId,
-            9600000001,
-            web3.utils.toBN('1000000000000000000'),
-            100,
+            rarityParams.duration_seconds,
+            web3.utils.toWei(price ? price : '0'),
+            rarityParams.supply,
           )
           .send({ from: wallet })
       } catch (error) {
@@ -84,6 +84,32 @@ export const mintNft = (wallet, nftAddress) => {
         const nftContract = new web3.eth.Contract(testapes_abi, nftAddress)
 
         const receipt = await nftContract.methods.mint().send({ from: wallet })
+        resolve(true)
+      } catch (error) {
+        reject(error)
+      }
+    }
+    reject('No injected web3 in browser')
+  })
+}
+
+export const buyCard = (wallet, nftAddress, nftId, price) => {
+  return new Promise(async (resolve, reject) => {
+    console.log('wallet', wallet)
+    console.log('nftAddress', nftAddress)
+    console.log('nftId', nftId)
+    console.log('price', price)
+    if (window.ethereum) {
+      try {
+        const web3 = new Web3(window.ethereum)
+        const nftContract = new web3.eth.Contract(
+          staking_abi,
+          TRADING_CARDS_ROPSTEN,
+        )
+
+        const receipt = await nftContract.methods
+          .buyTradingCard(nftAddress, nftId)
+          .send({ from: wallet, value: price })
         resolve(true)
       } catch (error) {
         reject(error)
