@@ -16,7 +16,7 @@ describe('Trading Card Contract', function () {
     TestApeToken = await ethers.getContractFactory('TestApeToken')
     ;[owner, addr1, addr2, ...addrs] = await ethers.getSigners()
 
-    tradingCards = await TradingCards.deploy()
+    tradingCards = await upgrades.deployProxy(TradingCards, [])
     testApeToken = await TestApeToken.deploy()
 
     await tradingCards.deployed()
@@ -30,7 +30,7 @@ describe('Trading Card Contract', function () {
 
     it('Should have empty staked and minted nft counters', async function () {
       expect(await tradingCards.stakedNftCounter()).to.equal(0)
-      expect(await tradingCards.mintedNftCounter()).to.equal(0)
+      expect(await tradingCards.mintedCardCounter()).to.equal(0)
     })
 
     it('Should have no whitelisted nft contracts', async function () {
@@ -57,8 +57,9 @@ describe('Trading Card Contract', function () {
 
   describe('Staking', function () {
     it('Should not allow non-whitelisted nft to be staked', async function () {
-      await expect(tradingCards.stakeNft(testApeToken.address, 0, 901, 100, 1))
-        .to.be.reverted
+      await expect(
+        tradingCards.stakeNft(testApeToken.address, 0, '10000000000000000', 0),
+      ).to.be.reverted
     })
 
     it('Should allow whitelisted nft to be staked', async function () {
@@ -68,64 +69,39 @@ describe('Trading Card Contract', function () {
 
       expect(await testApeToken.ownerOf(0)).to.equal(owner.address)
 
-      await expect(tradingCards.stakeNft(testApeToken.address, 0, 901, 100, 1))
-        .to.not.be.reverted
+      await expect(
+        tradingCards.stakeNft(testApeToken.address, 0, '10000000000000000', 0),
+      ).to.not.be.reverted
 
       expect(await testApeToken.ownerOf(0)).to.equal(tradingCards.address)
-    })
-
-    it('Should not allow nft to be staked if duration is less than a minute', async function () {
-      const duration = 1
-      await tradingCards.whitelistAddress(testApeToken.address)
-      await testApeToken.safeMint(owner.address)
-      await testApeToken.setApprovalForAll(tradingCards.address, true)
-
-      expect(await testApeToken.ownerOf(0)).to.equal(owner.address)
-
-      await expect(
-        tradingCards.stakeNft(testApeToken.address, 0, duration, 100, 1),
-      ).to.be.revertedWith('Staking duration must be longer than 1 minute')
-
-      expect(await testApeToken.ownerOf(0)).to.equal(owner.address)
-    })
-
-    it('Should not allow nft to be staked if supply is 0', async function () {
-      const supply = 0
-      await tradingCards.whitelistAddress(testApeToken.address)
-      await testApeToken.safeMint(owner.address)
-      await testApeToken.setApprovalForAll(tradingCards.address, true)
-
-      expect(await testApeToken.ownerOf(0)).to.equal(owner.address)
-
-      await expect(
-        tradingCards.stakeNft(testApeToken.address, 0, 601, 100, supply),
-      ).to.be.revertedWith('Supply must be atleast 1')
-
-      expect(await testApeToken.ownerOf(0)).to.equal(owner.address)
     })
   })
 
   describe('Minting', function () {
     beforeEach(async function () {
-      let price = 100
       await tradingCards.whitelistAddress(testApeToken.address)
       await testApeToken.safeMint(owner.address)
       await testApeToken.setApprovalForAll(tradingCards.address, true)
-      await tradingCards.stakeNft(testApeToken.address, 0, 901, price, 1)
+      await tradingCards.stakeNft(
+        testApeToken.address,
+        0,
+        '10000000000000000',
+        2,
+      )
     })
 
     it('Should let user to mint if exact price is paid', async function () {
       expect(
-        await tradingCards.buyTradingCard(testApeToken.address, 0, {
-          value: 100,
+        await tradingCards.connect(addr1).buyTradingCard(0, {
+          value: '10000000000000000',
         }),
-      ).to.changeEtherBalance(tradingCards, 100)
-      expect(await tradingCards.balanceOf(owner.address)).to.equal(1)
+      ).to.changeEtherBalance(owner, '10000000000000000')
+      expect(await tradingCards.balanceOf(addr1.address)).to.equal(1)
     })
 
     it('Should not let user mint if paying above price', async function () {
       await expect(
-        tradingCards.buyTradingCard(testApeToken.address, 0, {
+        tradingCards.buyTradingCard(0, {
           value: 101,
         }),
       ).to.revertedWith('Incorrect amount of funds sent')
@@ -133,88 +109,96 @@ describe('Trading Card Contract', function () {
 
     it('Should not let user mint if below price', async function () {
       await expect(
-        tradingCards.buyTradingCard(testApeToken.address, 0, {
+        tradingCards.buyTradingCard(0, {
           value: 99,
         }),
       ).to.revertedWith('Incorrect amount of funds sent')
     })
 
     it('Should not let user mint for free', async function () {
-      await expect(
-        tradingCards.buyTradingCard(testApeToken.address, 0),
-      ).to.revertedWith('Incorrect amount of funds sent')
+      await expect(tradingCards.buyTradingCard(0)).to.revertedWith(
+        'Incorrect amount of funds sent',
+      )
     })
 
     it('Should not let user mint if duration is exceeded', async function () {
-      ethers.provider.send('evm_increaseTime', [1200])
+      ethers.provider.send('evm_increaseTime', [259200 + 1])
       await expect(
-        tradingCards.buyTradingCard(testApeToken.address, 0, {
-          value: 100,
+        tradingCards.buyTradingCard(0, {
+          value: '10000000000000000',
         }),
-      ).to.be.revertedWith('Nft minting window has passed')
+      ).to.be.revertedWith('Card minting window has passed')
     })
 
     it('Should not let users mint beyond the supply cap', async function () {
       expect(
-        await tradingCards.buyTradingCard(testApeToken.address, 0, {
-          value: 100,
+        await tradingCards.connect(addr1).buyTradingCard(0, {
+          value: '10000000000000000',
         }),
-      ).to.changeEtherBalance(tradingCards, 100)
-      expect(await tradingCards.balanceOf(owner.address)).to.equal(1)
+      ).to.changeEtherBalance(owner, '10000000000000000')
+      expect(await tradingCards.balanceOf(addr1.address)).to.equal(1)
+      expect(
+        await tradingCards.connect(addr1).buyTradingCard(0, {
+          value: '10000000000000000',
+        }),
+      ).to.changeEtherBalance(owner, '10000000000000000')
+      expect(await tradingCards.balanceOf(addr1.address)).to.equal(2)
+      expect(
+        await tradingCards.connect(addr1).buyTradingCard(0, {
+          value: '10000000000000000',
+        }),
+      ).to.changeEtherBalance(owner, '10000000000000000')
+      expect(await tradingCards.balanceOf(addr1.address)).to.equal(3)
       await expect(
-        tradingCards.buyTradingCard(testApeToken.address, 0, {
-          value: 100,
+        tradingCards.connect(addr1).buyTradingCard(0, {
+          value: '10000000000000000',
         }),
-      ).to.be.revertedWith('Nft has reached supply cap')
+      ).to.be.revertedWith('Card has reached supply cap')
     })
   })
 
   describe('Unstaking', async function () {
     beforeEach(async function () {
-      let price = 100
       await tradingCards.whitelistAddress(testApeToken.address)
       await testApeToken.safeMint(owner.address)
       await testApeToken.setApprovalForAll(tradingCards.address, true)
-      await tradingCards.stakeNft(testApeToken.address, 0, 901, price, 1)
+      await tradingCards.stakeNft(
+        testApeToken.address,
+        0,
+        '10000000000000000',
+        0,
+      )
 
-      await tradingCards.buyTradingCard(testApeToken.address, 0, {
-        value: 100,
+      await tradingCards.buyTradingCard(0, {
+        value: '10000000000000000',
       })
     })
 
     it('Should not let owner unstake until end of duration time', async function () {
-      await expect(
-        tradingCards.unstakeNft(testApeToken.address, 0),
-      ).to.be.revertedWith('Staking period not over yet')
+      await expect(tradingCards.unstakeNft(0)).to.be.revertedWith(
+        'Staking period not over yet',
+      )
     })
 
     it('Should let owner unstake after end of duration time', async function () {
-      ethers.provider.send('evm_increaseTime', [1200])
+      ethers.provider.send('evm_increaseTime', [259200 + 1])
 
-      expect(await tradingCards.unstakeNft(testApeToken.address, 0))
+      expect(await tradingCards.unstakeNft(0))
     })
 
     it('Should only let owner unstake after end of duration time', async function () {
-      ethers.provider.send('evm_increaseTime', [1200])
+      ethers.provider.send('evm_increaseTime', [259200 + 1])
 
       await expect(
-        tradingCards.connect(addr1).unstakeNft(testApeToken.address, 0),
+        tradingCards.connect(addr1).unstakeNft(0),
       ).to.be.revertedWith('Only the original nft staker can unstake')
     })
 
-    it('Should transfer earned revenue to owner after unstaking', async function () {
-      ethers.provider.send('evm_increaseTime', [1200])
-
-      expect(
-        await tradingCards.unstakeNft(testApeToken.address, 0),
-      ).to.changeEtherBalance(tradingCards, -100)
-    })
-
     it('Should transfer staked nft back to owner after unstaking', async function () {
-      ethers.provider.send('evm_increaseTime', [1200])
+      ethers.provider.send('evm_increaseTime', [259200 + 1])
 
       expect(await testApeToken.ownerOf(0)).to.equal(tradingCards.address)
-      expect(await tradingCards.unstakeNft(testApeToken.address, 0))
+      expect(await tradingCards.unstakeNft(0))
       expect(await testApeToken.ownerOf(0)).to.equal(owner.address)
     })
   })

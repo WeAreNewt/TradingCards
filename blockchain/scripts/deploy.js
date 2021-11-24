@@ -1,3 +1,5 @@
+const { ethers, upgrades } = require('hardhat')
+
 async function main() {
   const [deployer] = await ethers.getSigners()
   console.log(
@@ -9,7 +11,7 @@ async function main() {
 
   const TradingCards = await ethers.getContractFactory('TradingCards')
   console.log(TradingCards.bytecode)
-  const tradingCards = await TradingCards.deploy()
+  const tradingCards = await upgrades.deployProxy(TradingCards, [])
   await tradingCards.deployed()
   console.log('tradingCards address:', tradingCards.address)
 

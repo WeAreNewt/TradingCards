@@ -26,14 +26,14 @@ contract TradingCards is Initializable, ERC721Upgradeable, IERC721ReceiverUpgrad
         bool inVault;
     }
     
-    uint256 public stakedNftCounter = 0;
-    uint256 public mintedNftCounter = 0;
+    uint256 public stakedNftCounter;
+    uint256 public mintedCardCounter;
     
     mapping (address => bool) public NFT_WHITELIST;
     mapping (uint256 => StakedNft) public STAKED_NFTS;
     mapping (uint256 => uint256) public cardToStakedNft;
     
-    string public BASE_URI = "https://l2g.eu.ngrok.io/metadata/";
+    string public BASE_URI;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
@@ -43,6 +43,9 @@ contract TradingCards is Initializable, ERC721Upgradeable, IERC721ReceiverUpgrad
         __ERC721Enumerable_init();
         __ERC721URIStorage_init();
         __Ownable_init();
+        stakedNftCounter = 0;
+        mintedCardCounter = 0;
+        BASE_URI = "https://l2g.eu.ngrok.io/metadata/";
     }
 
     function _raritySupply(uint256 rarity) public pure returns(uint256 supply) {
@@ -79,11 +82,11 @@ contract TradingCards is Initializable, ERC721Upgradeable, IERC721ReceiverUpgrad
 
     function stakeNft(address nftContract, uint256 nftId, uint256 price, uint256 rarity) external {
         require(NFT_WHITELIST[nftContract] == true, "Target nft is not whitelisted for staking");
-        stakedNftCounter++;
         
         IERC721(nftContract).safeTransferFrom(msg.sender, address(this), nftId);
-        STAKED_NFTS[stakedNftCounter] = StakedNft(nftContract, nftId, msg.sender, block.timestamp, _raritySupply(rarity), price, _raritySupply(rarity), 0, true);
-
+        STAKED_NFTS[stakedNftCounter] = StakedNft(nftContract, nftId, msg.sender, block.timestamp, _rarityDuration(rarity), price, _raritySupply(rarity), 0, true);
+        
+        stakedNftCounter++;
         emit NftStaked(stakedNftCounter, nftContract, address(msg.sender), nftId, price, rarity);
     }
     
@@ -95,24 +98,23 @@ contract TradingCards is Initializable, ERC721Upgradeable, IERC721ReceiverUpgrad
 
         targetCard.inVault = false;
         IERC721(targetCard.tokenContract).safeTransferFrom(address(this), msg.sender, targetCard.tokenId);
-        uint256 totalRevenue = targetCard.copies * targetCard.price;
-        
-        payable(msg.sender).transfer(totalRevenue);
     }
     
     function buyTradingCard(uint256 cardId) external payable {
         StakedNft memory targetCard = STAKED_NFTS[cardId];
-        require(targetCard.inVault == true, "Nft is no longer staked");
-        require(block.timestamp < targetCard.timestamp + targetCard.duration, "Nft minting window has passed");
-        require(targetCard.copies < targetCard.supply, "Nft has reached supply cap");
+        require(targetCard.inVault == true, "Card is no longer staked");
+        require(block.timestamp < targetCard.timestamp + targetCard.duration, "Card minting window has passed");
+        require(targetCard.copies < targetCard.supply, "Card has reached supply cap");
         require(msg.value == targetCard.price, "Incorrect amount of funds sent");
 
         STAKED_NFTS[cardId].copies++;
-        mintedNftCounter++;
 
-        _safeMint(msg.sender, mintedNftCounter);
-        cardToStakedNft[mintedNftCounter] = cardId;
+        cardToStakedNft[mintedCardCounter] = cardId;
+        payable(targetCard.owner).transfer(msg.value);
 
+        _safeMint(msg.sender, mintedCardCounter);
+        
+        mintedCardCounter++;
         emit CardBought(cardId, targetCard.tokenContract, targetCard.owner, targetCard.tokenId);
     }
 
