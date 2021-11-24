@@ -79,12 +79,12 @@ contract TradingCards is Initializable, ERC721Upgradeable, IERC721ReceiverUpgrad
 
     function stakeNft(address nftContract, uint256 nftId, uint256 price, uint256 rarity) external {
         require(NFT_WHITELIST[nftContract] == true, "Target nft is not whitelisted for staking");
+        stakedNftCounter++;
         
         IERC721(nftContract).safeTransferFrom(msg.sender, address(this), nftId);
         STAKED_NFTS[stakedNftCounter] = StakedNft(nftContract, nftId, msg.sender, block.timestamp, _raritySupply(rarity), price, _raritySupply(rarity), 0, true);
 
         emit NftStaked(stakedNftCounter, nftContract, address(msg.sender), nftId, price, rarity);
-        stakedNftCounter++;
     }
     
     function unstakeNft(uint256 cardId) external {
@@ -112,7 +112,6 @@ contract TradingCards is Initializable, ERC721Upgradeable, IERC721ReceiverUpgrad
         mintedNftCounter++;
 
         _safeMint(msg.sender, mintedNftCounter);
-
         cardToStakedNft[mintedNftCounter] = cardId;
 
         emit CardBought(cardId, targetCard.tokenContract, targetCard.owner, targetCard.tokenId);
