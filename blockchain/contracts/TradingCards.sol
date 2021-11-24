@@ -51,33 +51,25 @@ contract TradingCards is Initializable, ERC721Upgradeable, IERC721ReceiverUpgrad
 
     function _raritySupply(uint256 rarity) public pure returns(uint256 supply) {
         if (rarity == 0) {
-            // SILVER => supply: 100
             return (100); 
         } else if (rarity == 1) {
-            // GOLD => supply: 10
             return (10);
         } else if (rarity == 2) {
-            // PLATINUM => supply: 3
             return (3);
         } else if (rarity == 3) {
-            // TITANIUM => supply: 1
             return (1);
         }
     }
 
     function _rarityDuration(uint256 rarity) public pure returns(uint256 duration) {
         if (rarity == 0) {
-            // SILVER => duration: 12 hours
-            return (43200); 
+            return (43200);  // 12 hours 
         } else if (rarity == 1) {
-            // GOLD => duration: 24 hours
-            return (86400);
+            return (86400);  // 24 hours
         } else if (rarity == 2) {
-            // PLATINUM => duration: 3 days
-            return (259200);
+            return (259200); // 3 days
         } else if (rarity == 3) {
-            // TITANIUM => duration: 1 week
-            return (604800);
+            return (604800); // 1 week
         }
     }
 
