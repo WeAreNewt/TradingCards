@@ -1,5 +1,6 @@
 require('@nomiclabs/hardhat-waffle')
 require('@openzeppelin/hardhat-upgrades')
+require('dotenv').config()
 
 module.exports = {
   solidity: {
@@ -17,5 +18,11 @@ module.exports = {
         },
       },
     ],
+  },
+  networks: {
+    ropsten: {
+      url: process.env.ROPSTEN_ALCHEMY_URL,
+      accounts: [process.env.ROPSTEN_PRIVATE_KEY],
+    },
   },
 }

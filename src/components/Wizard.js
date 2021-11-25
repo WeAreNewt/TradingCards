@@ -95,8 +95,8 @@ export default function Wizard(props) {
           wallet,
           selectedNft.collection,
           selectedNft.tokenId,
-          selected,
           price,
+          selected.tier,
         )
         setIsMined(true)
         setIsMining(false)

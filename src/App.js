@@ -37,11 +37,14 @@ function App() {
 
   const [isCardsLoading, setIsCardsLoading] = useState(true)
   const [allCards, setAllCards] = useState([])
+  const [cardsLookup, setCardsLookup] = useState({})
 
   const reloadCards = async () => {
-    const cards = await getAllCards()
+    const { cards, cardsLookup } = await getAllCards()
+
     setAllCards(cards)
     setIsCardsLoading(false)
+    setCardsLookup(cardsLookup)
   }
 
   useEffect(() => {
@@ -247,7 +250,30 @@ function App() {
                                     aria-hidden="true"
                                     className="absolute inset-0"
                                   />
-                                  0.06 Ξ
+                                  {allCards
+                                    .filter(
+                                      (card) =>
+                                        card.nftContract.toLowerCase() ===
+                                        collection.address.toLowerCase(),
+                                    )
+                                    .sort(
+                                      (a, b) =>
+                                        Number(b.price_eth) -
+                                        Number(a.price_eth),
+                                    ).length > 0
+                                    ? allCards
+                                        .filter(
+                                          (card) =>
+                                            card.nftContract.toLowerCase() ===
+                                            collection.address.toLowerCase(),
+                                        )
+                                        .sort(
+                                          (a, b) =>
+                                            Number(b.price_eth) -
+                                            Number(a.price_eth),
+                                        )[0].price_eth
+                                    : 0}{' '}
+                                  Ξ
                                 </div>
                               </h3>
                             </div>
@@ -256,7 +282,13 @@ function App() {
                                 No. of cards
                               </p>
                               <h3 className=" text-md font-bold text-gray-700 text-right">
-                                190
+                                {
+                                  allCards.filter(
+                                    (card) =>
+                                      card.nftContract.toLowerCase() ===
+                                      collection.address.toLowerCase(),
+                                  ).length
+                                }
                               </h3>
                             </div>
                           </div>

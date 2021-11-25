@@ -1,6 +1,6 @@
 import { LightningBoltIcon, CreditCardIcon } from '@heroicons/react/outline'
 import BAYC from '../assets/images/bayc.png'
-import C4 from '../assets/images/c4.png'
+import FrameBackground from '../assets/images/card_frame.png'
 
 export default function PreviewCard(props) {
   const { nft, rarity, price, isWizard } = props
@@ -20,7 +20,7 @@ export default function PreviewCard(props) {
             nft.metadata ? '' : 'hidden '
           } z-30 flex flex-col rounded-lg shadow-lg overflow-hidden p-2 bg-white `}
           style={{
-            backgroundImage: `url(${C4})`,
+            backgroundImage: `url(${FrameBackground})`,
             backgroundRepeat: 'no-repeat',
             backgroundSize: 'Cover',
           }}
@@ -44,7 +44,7 @@ export default function PreviewCard(props) {
               <div
                 className="flex-1 bg-gradient-to-r from-gray-300 via-gray-200 to-gray-300 p-1 rounded-xl "
                 style={{
-                  backgroundImage: `url(${C4})`,
+                  backgroundImage: `url(${FrameBackground})`,
                   backgroundRepeat: 'no-repeat',
                   backgroundSize: 'Cover',
                   backgroundPosition: 'Center',

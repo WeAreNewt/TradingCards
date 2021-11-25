@@ -11,7 +11,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 contract TradingCards is Initializable, ERC721Upgradeable, IERC721ReceiverUpgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, OwnableUpgradeable {
     event NftWhitelisted (address indexed nftContract);
-    event NftStaked (uint256 indexed cardId, address indexed nftContract, address indexed nftOwner, uint256 nftId, uint256 price, uint256 rarity, uint256 duration, uint256 supply);
+    event NftStaked (uint256 indexed cardId, address indexed nftContract, address indexed nftOwner, uint256 nftId, uint256 price, uint256 rarity, uint256 duration, uint256 supply, uint256 timestamp);
     event CardBought (uint256 indexed cardId, address indexed nftContract, address indexed nftOwner, uint256 nftId, uint256 edition);
 
     struct StakedNft {
@@ -81,8 +81,8 @@ contract TradingCards is Initializable, ERC721Upgradeable, IERC721ReceiverUpgrad
         IERC721(nftContract).safeTransferFrom(msg.sender, address(this), nftId);
         STAKED_NFTS[stakedNftCounter] = StakedNft(nftContract, nftId, msg.sender, block.timestamp, stakingDuration, price, cardSupply, 0, rarity, true);
         
+        emit NftStaked(stakedNftCounter, nftContract, address(msg.sender), nftId, price, rarity, stakingDuration, cardSupply, block.timestamp);
         stakedNftCounter++;
-        emit NftStaked(stakedNftCounter, nftContract, address(msg.sender), nftId, price, rarity, stakingDuration, cardSupply);
     }
     
     function unstakeNft(uint256 cardId) external {
@@ -109,8 +109,8 @@ contract TradingCards is Initializable, ERC721Upgradeable, IERC721ReceiverUpgrad
 
         _safeMint(msg.sender, mintedCardCounter);
         
-        mintedCardCounter++;
         emit CardBought(cardId, targetCard.tokenContract, targetCard.owner, targetCard.tokenId, STAKED_NFTS[cardId].copies);
+        mintedCardCounter++;
     }
 
     function getCardInfo(uint256 cardId) external view returns(StakedNft memory cardInfo) {

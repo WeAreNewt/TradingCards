@@ -77,11 +77,11 @@ export default function CollectionPage(props) {
     }
   }, [allCards, isAllCardsLoading])
 
-  const buyTradingCard = async (nftContract, nftId, price) => {
+  const buyTradingCard = async (card) => {
     if (!isBuyingTradingCard) {
       setIsBuyingTradingCard(true)
       try {
-        buyCard(wallet, nftContract, nftId, price)
+        buyCard(wallet, card)
       } catch (error) {
         console.log(error)
       }
@@ -124,7 +124,7 @@ export default function CollectionPage(props) {
                 </Link>
               </div>
             </div>
-            <div to="/explore" key="Explore">
+            <div to="/explore" key="Collection">
               <div className="flex items-center">
                 <ChevronRightIcon
                   className="flex-shrink-0 h-5 w-5 text-gray-400"
@@ -143,7 +143,7 @@ export default function CollectionPage(props) {
         </h2>
         <div className="h-full mt-6 grid grid-cols-1 gap-y-2 gap-x-6 px-6 sm:px-0 sm:grid-cols-3 lg:grid-cols-3 xl:gap-x-12">
           {cards.map((card) => (
-            <div className="relative" key={card.collection + card.tokenId}>
+            <div className="relative" key={card.cardId}>
               <div // Link
                 to={`/card/${collection.address}/${card.nftId}`}
                 state={{ collection, card }}
@@ -174,9 +174,7 @@ export default function CollectionPage(props) {
                     </h3>
                   </div>
                   <button
-                    onClick={() =>
-                      buyTradingCard(collection.address, card.nftId, card.price)
-                    }
+                    onClick={() => buyTradingCard(card)}
                     className="bg-gray-300 text-gray-500 font-semibold text-md py-1 px-2 rounded-md hover:text-gray-700"
                   >
                     Buy now

@@ -3,8 +3,12 @@ import axios from 'axios'
 import testapes_abi from '../assets/abis/testapes'
 import erc721_abi from '../assets/abis/erc721'
 import staking_abi from '../assets/abis/staking'
-
-const TRADING_CARDS_ROPSTEN = '0xDEF2fb08a19cB7de9cb2f4c3e583b9b5EFF5C7CD'
+import tradingcards_abi from '../assets/abis/tradingcards'
+import {
+  COLLECTIONS,
+  RARITY_TIERS,
+  TRADING_CARDS_ADDRESS_ROPSTEN,
+} from './constants'
 
 export const giveApproval = (wallet, nftAddress, rarity) => {
   return new Promise(async (resolve, reject) => {
@@ -14,7 +18,7 @@ export const giveApproval = (wallet, nftAddress, rarity) => {
         const nftContract = new web3.eth.Contract(erc721_abi, nftAddress)
 
         await nftContract.methods
-          .setApprovalForAll(TRADING_CARDS_ROPSTEN, true)
+          .setApprovalForAll(TRADING_CARDS_ADDRESS_ROPSTEN, true)
           .send({ from: wallet })
       } catch (error) {
         reject(error)
@@ -34,7 +38,7 @@ export const getApproval = (wallet, nftAddress) => {
         const nftContract = new web3.eth.Contract(erc721_abi, nftAddress)
 
         const isApprovedForAll = await nftContract.methods
-          .isApprovedForAll(wallet, TRADING_CARDS_ROPSTEN)
+          .isApprovedForAll(wallet, TRADING_CARDS_ADDRESS_ROPSTEN)
           .call()
         resolve(isApprovedForAll)
       } catch (error) {
@@ -47,23 +51,22 @@ export const getApproval = (wallet, nftAddress) => {
   })
 }
 
-export const stakeNft = (wallet, nftAddress, nftId, rarityParams, price) => {
+export const stakeNft = (wallet, nftAddress, nftId, price, rarity) => {
   return new Promise(async (resolve, reject) => {
     if (window.ethereum) {
       try {
         const web3 = new Web3(window.ethereum)
         const nftContract = new web3.eth.Contract(
-          staking_abi,
-          TRADING_CARDS_ROPSTEN,
+          tradingcards_abi,
+          TRADING_CARDS_ADDRESS_ROPSTEN,
         )
 
         await nftContract.methods
           .stakeNft(
             nftAddress,
             nftId,
-            rarityParams.duration_seconds,
             web3.utils.toWei(price ? price : '0'),
-            rarityParams.supply,
+            rarity,
           )
           .send({ from: wallet })
       } catch (error) {
@@ -93,23 +96,19 @@ export const mintNft = (wallet, nftAddress) => {
   })
 }
 
-export const buyCard = (wallet, nftAddress, nftId, price) => {
+export const buyCard = (wallet, card) => {
   return new Promise(async (resolve, reject) => {
-    console.log('wallet', wallet)
-    console.log('nftAddress', nftAddress)
-    console.log('nftId', nftId)
-    console.log('price', price)
     if (window.ethereum) {
       try {
         const web3 = new Web3(window.ethereum)
         const nftContract = new web3.eth.Contract(
-          staking_abi,
-          TRADING_CARDS_ROPSTEN,
+          tradingcards_abi,
+          TRADING_CARDS_ADDRESS_ROPSTEN,
         )
 
-        const receipt = await nftContract.methods
-          .buyTradingCard(nftAddress, nftId)
-          .send({ from: wallet, value: price })
+        await nftContract.methods
+          .buyTradingCard(card.cardId)
+          .send({ from: wallet, value: card.price })
         resolve(true)
       } catch (error) {
         reject(error)
@@ -231,8 +230,8 @@ export const getAllCards = () => {
       )
 
       const tradingContract = new web3.eth.Contract(
-        staking_abi,
-        TRADING_CARDS_ROPSTEN,
+        tradingcards_abi,
+        TRADING_CARDS_ADDRESS_ROPSTEN,
       )
 
       const nftStakedEvents = await tradingContract.getPastEvents('NftStaked', {
@@ -247,27 +246,58 @@ export const getAllCards = () => {
         },
       )
 
-      let allCards = []
+      let cardIdLookup = {}
 
       nftStakedEvents.forEach((event) => {
         const {
+          cardId,
           nftContract,
           nftId,
           nftOwner,
           price,
           supply,
+          duration,
+          timestamp,
+          rarity,
         } = event.returnValues
 
-        allCards.push({
+        let cardCollection = COLLECTIONS.filter(
+          (collection) =>
+            collection.address.toLowerCase() === nftContract.toLowerCase(),
+        )[0]
+        let cardRarity = RARITY_TIERS[rarity]
+
+        let hydratedCard = {
+          cardId: cardId,
           nftContract: nftContract,
           nftId: nftId,
           owner: nftOwner,
           price: price,
           price_eth: web3.utils.fromWei(price).toString(),
+          duration: duration,
+          timestamp: timestamp,
+          rarity: rarity,
+          rarityMeta: cardRarity,
+          collectionMeta: cardCollection,
           supply: supply,
-        })
+          copies: 0,
+        }
+
+        cardIdLookup[cardId] = hydratedCard
       })
-      resolve(allCards)
+
+      cardBoughtEvents.forEach((cardBuy) => {
+        if (cardIdLookup[cardBuy.cardId]) {
+          cardIdLookup[cardBuy.cardId].copies += 1
+        }
+      })
+
+      let allCards = []
+      for (const cardId in cardIdLookup) {
+        allCards.push(cardIdLookup[cardId])
+      }
+
+      resolve({ cards: allCards, cardsLookup: cardIdLookup })
     } catch (error) {
       console.log(error)
       reject(error)

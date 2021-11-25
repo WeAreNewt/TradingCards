@@ -8,7 +8,7 @@ import Platinum from '../assets/images/platinum.png'
 import Titanium from '../assets/images/titanium.png'
 
 export const TRADING_CARDS_ADDRESS_ROPSTEN =
-  '0xDEF2fb08a19cB7de9cb2f4c3e583b9b5EFF5C7CD'
+  '0x0d6305E0b868ef632F505e0BC5D07Ce542b2A86a'
 
 export const COLLECTIONS = [
   {
@@ -30,6 +30,7 @@ export const COLLECTIONS = [
 
 export const RARITY_TIERS = [
   {
+    tier: 0,
     name: 'Silver',
     duration: '12',
     durationType: 'hours',
@@ -44,6 +45,7 @@ export const RARITY_TIERS = [
     },
   },
   {
+    tier: 1,
     name: 'Gold',
     duration: '1',
     durationType: 'day',
@@ -58,6 +60,7 @@ export const RARITY_TIERS = [
     },
   },
   {
+    tier: 2,
     name: 'Platinum',
     duration: '3',
     durationType: 'days',
@@ -72,6 +75,7 @@ export const RARITY_TIERS = [
     },
   },
   {
+    tier: 3,
     name: 'Titanium',
     duration: '1',
     durationType: 'week',

@@ -5,11 +5,6 @@ import { COLLECTIONS, RARITY_TIERS } from '../utils/constants'
 import { ChevronRightIcon, HomeIcon } from '@heroicons/react/solid'
 import PreviewCard from '../components/PreviewCard'
 
-const pages = [
-  { name: 'Projects', href: '#', current: false },
-  { name: 'Project Nero', href: '#', current: true },
-]
-
 export default function CollectionPage(props) {
   const { state, allCards, isAllCardsLoading } = props
   let location = useLocation()
