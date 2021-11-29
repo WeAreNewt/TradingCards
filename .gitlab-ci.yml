@@ -1,0 +1,43 @@
+stages:
+  - build
+  - deploy
+  - cleanup
+
+default:
+  tags:
+    - aave-docker
+
+build:
+  stage: build
+  image: node:lts
+  script:
+    - npm install @craco/craco
+    - npm ci
+    - npm run build
+    - mv build trading-cards
+  artifacts:
+    when: always
+    paths:
+      - trading-cards
+
+deploy:
+  image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
+  stage: deploy
+  needs: ['build']
+  script:
+    - aws s3 sync ./trading-cards s3://${S3}/trading-cards
+    - ./ci/cache_invalidation.sh
+  environment:
+    name: trading-cards
+    url: 'https://${CREDENTIALS}@trading-cards.${S3}'
+    on_stop: stop
+
+stop:
+  image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
+  stage: cleanup
+  script:
+    - aws s3 rm s3://${S3}/trading-cards --recursive
+  environment:
+    name: trading-cards
+    action: stop
+  when: manual
