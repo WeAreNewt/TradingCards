@@ -12,7 +12,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 contract TradingCards is Initializable, ERC721Upgradeable, IERC721ReceiverUpgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, OwnableUpgradeable {
     event NftWhitelisted (address indexed nftContract);
     event NftStaked (uint256 indexed cardId, address indexed nftContract, address indexed nftOwner, uint256 nftId, uint256 price, uint256 rarity, uint256 duration, uint256 supply, uint256 timestamp);
-    event CardBought (uint256 indexed cardId, address indexed nftContract, address indexed nftOwner, uint256 nftId, uint256 edition);
+    event CardBought (uint256 indexed cardId, address indexed nftContract, address indexed cardOwner, uint256 nftId, uint256 edition);
 
     struct StakedNft {
         address tokenContract;
@@ -109,7 +109,7 @@ contract TradingCards is Initializable, ERC721Upgradeable, IERC721ReceiverUpgrad
 
         _safeMint(msg.sender, mintedCardCounter);
         
-        emit CardBought(cardId, targetCard.tokenContract, targetCard.owner, targetCard.tokenId, STAKED_NFTS[cardId].copies);
+        emit CardBought(cardId, targetCard.tokenContract, msg.sender, targetCard.tokenId, STAKED_NFTS[cardId].copies);
         mintedCardCounter++;
     }
 
