@@ -1,14 +1,8 @@
 import { useEffect, useState } from 'react'
-import {
-  ArrowNarrowLeftIcon,
-  ArrowNarrowRightIcon,
-  CheckCircleIcon,
-  CheckIcon,
-} from '@heroicons/react/solid'
+import { ArrowNarrowRightIcon } from '@heroicons/react/solid'
 import {
   ClockIcon,
   TicketIcon,
-  CreditCardIcon,
   ExclamationCircleIcon,
 } from '@heroicons/react/outline'
 import { RadioGroup } from '@headlessui/react'
@@ -40,14 +34,8 @@ export default function Wizard(props) {
     connectButton,
   } = props
 
-  const [isConnected, setIsConnected] = useState(false)
-  const [isConnecting, setIsConnecting] = useState(false)
-  const [isRightChain, setIsRightChain] = useState(false)
-  const [isSwitchingChain, setIsSwitchingChains] = useState(false)
-
   const [isMintingNft, setIsMintingNft] = useState(false)
   const [isMintingCatNft, setIsMintingCatNft] = useState(false)
-  const [isMintingToadNft, setIsMintingToadNft] = useState(false)
 
   const [isApproving, setIsApproving] = useState(false)
   const [isApproved, setIsApproved] = useState(false)
@@ -94,7 +82,7 @@ export default function Wizard(props) {
         await stakeNft(
           wallet,
           selectedNft.collection,
-          selectedNft.tokenId,
+          selectedNft.nftId,
           price,
           selected.tier,
         )
@@ -234,9 +222,9 @@ export default function Wizard(props) {
               .map((file) => (
                 <li
                   onClick={() => setSelectedNft(file)}
-                  key={file.collection + file.tokenId}
+                  key={file.collection + file.nftId}
                   className={`relative ${
-                    file.tokenId === selectedNft.tokenId &&
+                    file.nftId === selectedNft.nftId &&
                     file.collection === selectedNft.collection
                       ? ''
                       : 'opacity-40'
@@ -262,10 +250,10 @@ export default function Wizard(props) {
                     '0x7Cb60F872a8a9A8D2bf5ed50C862CAf5cb85D679'
                       ? 'BAYC'
                       : 'Cool Cat'}
-                    : #{file.tokenId}
+                    : #{file.nftId}
                   </p>
                   <p className="block text-sm font-medium text-gray-500 pointer-events-none">
-                    {file.tokenId}
+                    {file.nftId}
                   </p>
                 </li>
               ))}
@@ -341,7 +329,7 @@ export default function Wizard(props) {
                   setIsMintingCatNft(false)
                 }
               }}
-              key="test ape"
+              key="test cat"
               className="relative"
             >
               <div className="group block w-full aspect-w-10 aspect-h-10 rounded-lg bg-gray-100 border-dashed border-4 overflow-hidden">

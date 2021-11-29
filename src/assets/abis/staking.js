@@ -1,4 +1,4 @@
-export default [
+const staking = [
   {
     inputs: [],
     stateMutability: 'nonpayable',
@@ -807,3 +807,5 @@ export default [
     type: 'function',
   },
 ]
+
+export default staking

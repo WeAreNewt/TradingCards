@@ -1,19 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Routes, Route, Link, useLocation } from 'react-router-dom'
-import Web3 from 'web3'
-import {
-  FireIcon,
-  HomeIcon,
-  TerminalIcon,
-  ClipboardListIcon,
-  LibraryIcon,
-} from '@heroicons/react/outline'
 import { InformationCircleIcon } from '@heroicons/react/solid'
 
 import { getNftBalance, getAllCards } from './utils/helpers'
-import PreviewCard from './components/PreviewCard'
 import Wizard from './components/Wizard'
 import CollectionPage from './pages/CollectionPage'
+import VaultPage from './pages/VaultPage'
 import CardPage from './pages/CardPage'
 import { COLLECTIONS } from './utils/constants'
 
@@ -23,10 +15,6 @@ function App() {
   let location = useLocation()
 
   const [isWrongChain, setIsWrongChain] = useState(false)
-
-  const [isLoading, setIsLoading] = useState(true)
-  const [isConnected, setIsConnected] = useState(false)
-  const [navigation, setNavigation] = useState('Card Maker')
 
   const [isConnecting, setIsConnecting] = useState(false)
   const [isSwitching, setIsSwitching] = useState(false)
@@ -89,9 +77,6 @@ function App() {
         setIsLoadingCollections(false)
 
         setAccount(accounts[0])
-        setIsConnected(true)
-      } else {
-        setIsConnected(false)
       }
     }
   }
@@ -125,6 +110,7 @@ function App() {
                     name: 'collection',
                     title: 'Collection',
                   },
+                  { name: 'vault', title: 'Vault' },
                   {
                     name: 'wizard',
                     title: 'Wizard',
@@ -214,6 +200,17 @@ function App() {
                 path="/card/:nftContract/:nftId"
                 element={
                   <CardPage
+                    allCards={allCards}
+                    isCardsLoading={isCardsLoading}
+                  />
+                }
+              />
+
+              <Route
+                path="/vault"
+                element={
+                  <VaultPage
+                    wallet={account}
                     allCards={allCards}
                     isCardsLoading={isCardsLoading}
                   />

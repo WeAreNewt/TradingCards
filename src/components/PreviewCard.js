@@ -4,6 +4,9 @@ import FrameBackground from '../assets/images/card_frame.png'
 
 export default function PreviewCard(props) {
   const { nft, rarity, price, isWizard } = props
+
+  console.log('nft', nft)
+
   const CardRender = () => {
     return (
       <>
@@ -52,7 +55,7 @@ export default function PreviewCard(props) {
               >
                 <div className="flex-1 bg-white rounded-xl">
                   <div className="block ">
-                    <p className=" rounded-t-xl text-xl px-2 pt-2 pb-1 font-semibold text-gray-900 border-b-2 border-dashed border-gray-200 ">
+                    <div className=" rounded-t-xl text-xl px-2 pt-2 pb-1 font-semibold text-gray-900 border-b-2 border-dashed border-gray-200 ">
                       <div className="bg-clip-text text-transparent bg-gradient-to-r from-sky-800 via-blue-400 to-sky-800">
                         {nft.collection ===
                         '0x7Cb60F872a8a9A8D2bf5ed50C862CAf5cb85D679'
@@ -60,8 +63,8 @@ export default function PreviewCard(props) {
                           : 'COOL'}{' '}
                         #{nft.nftId} Trading Card
                       </div>
-                    </p>
-                    <p className="px-2 pb-1 text-base text-gray-500 flex flex-col space-y-0 mr-6 pt-1">
+                    </div>
+                    <div className="px-2 pb-1 text-base text-gray-500 flex flex-col space-y-0 mr-6 pt-1">
                       <div className="group flex items-center px-3 py-1 pt-1 text-sm font-medium rounded-md cursor-pointer">
                         <LightningBoltIcon className="text-yellow-500 flex-shrink-0 -ml-1 mr-3 h-6 w-6" />
                         <div className="text-gray-700 text-md overflow-x-scroll max-w-full">
@@ -77,7 +80,7 @@ export default function PreviewCard(props) {
                           mint
                         </div>
                       </div>
-                    </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -88,18 +91,30 @@ export default function PreviewCard(props) {
               >
                 <div className="flex-shrink-0">
                   <div>
-                    <img className="h-10 w-10 rounded-full" src={BAYC} alt="" />
+                    <img
+                      className="h-10 w-10 rounded-full"
+                      src={
+                        nft.collectionMeta ? nft.collectionMeta.logoImage : ''
+                      }
+                      alt=""
+                    />
                   </div>
                 </div>
 
                 <div className="ml-3 w-full ">
-                  <p className="text-sm font-medium text-gray-900">
-                    <div className="hover:underline">Bored Ape Yacht Club</div>
-                  </p>
+                  <div className="text-sm font-medium text-gray-900">
+                    <div className="hover:underline">
+                      {nft.collectionMeta ? nft.collectionMeta.name : ''}
+                    </div>
+                  </div>
                   <div className="flex flex-row w-full justify-between">
                     <div className="flex space-x-1 text-sm text-gray-500">
                       <div>Id</div>
-                      <div>2476/8000</div>
+                      <div>
+                        {`${nft.nftId ? nft.nftId : 0}/${
+                          nft.collectionMeta ? nft.collectionMeta.supply : 0
+                        }`}
+                      </div>
                     </div>
                     <div className="flex w-full justify-end items-end space-x-1 text-sm text-gray-500">
                       1/{rarity ? rarity.supply : 100}

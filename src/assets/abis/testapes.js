@@ -1,4 +1,4 @@
-export default [
+const testapes = [
   {
     anonymous: false,
     inputs: [
@@ -420,3 +420,5 @@ export default [
     type: 'function',
   },
 ]
+
+export default testapes

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { getNftMetadata, buyCard } from '../utils/helpers'
-import { COLLECTIONS, RARITY_TIERS } from '../utils/constants'
+import { RARITY_TIERS } from '../utils/constants'
 import { ChevronRightIcon, HomeIcon } from '@heroicons/react/solid'
 import PreviewCard from '../components/PreviewCard'
 
@@ -21,24 +21,6 @@ export default function CollectionPage(props) {
 
   const [isCardsLoading, setIsCardsLoading] = useState(true)
   const [cards, setCards] = useState([])
-
-  useEffect(() => {
-    if (!state) {
-      let collections = COLLECTIONS.filter(
-        (_collection) =>
-          _collection.address.toLowerCase() ===
-          location.pathname
-            .slice(location.pathname.indexOf('0x'))
-            .toLowerCase(),
-      )
-      if (collections[0]) {
-        setCollection(collections[0])
-      } else {
-        console.log(location)
-        //navigate('/', { replace: true })
-      }
-    }
-  }, [])
 
   const hydrateCards = async (cards) => {
     let hydratedCards = []
@@ -60,11 +42,7 @@ export default function CollectionPage(props) {
       console.log('ALL CARDS', allCards)
       hydrateCards(
         allCards.filter(
-          (card) =>
-            card.nftContract.toLowerCase() ===
-            location.pathname
-              .slice(location.pathname.indexOf('0x'))
-              .toLowerCase(),
+          (card) => card.owner.toLowerCase() === wallet.toLowerCase(),
         ),
       ).then(() => {
         setIsCardsLoading(false)

@@ -1,4 +1,4 @@
-export default [
+const erc721 = [
   {
     anonymous: false,
     inputs: [
@@ -694,3 +694,5 @@ export default [
     type: 'function',
   },
 ]
+
+export default erc721

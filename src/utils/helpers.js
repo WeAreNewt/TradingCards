@@ -142,7 +142,6 @@ export const getNftBalance = (wallet, nftAddress) => {
 
       let transfers = await Promise.all(promises)
 
-      console.log('Transfer events', transfers)
       transfers = transfers
         .flat(1)
         .sort((a, b) => a.blockNumber - b.blockNumber)
@@ -166,11 +165,8 @@ export const getNftBalance = (wallet, nftAddress) => {
             .tokenURI(token_id)
             .call()
 
-          console.log(metadataUri)
-
           try {
             if (metadataUri.indexOf('ipfs://') === 0) {
-              let path = metadataUri.slice(7)
               const metadataResponse = await axios.get(
                 'https://ipfs.infura.io/ipfs/' + metadataUri.slice(7),
               )
@@ -182,9 +178,15 @@ export const getNftBalance = (wallet, nftAddress) => {
 
               metadata['json'] = { image: metadata['image'] }
 
+              let cardCollection = COLLECTIONS.filter(
+                (collection) =>
+                  collection.address.toLowerCase() === nftAddress.toLowerCase(),
+              )[0]
+
               currentBalance.push({
-                tokenId: token_id,
+                nftId: token_id,
                 collection: nftAddress,
+                collectionMeta: cardCollection,
                 metadata: metadata,
               })
             } else {
@@ -198,16 +200,21 @@ export const getNftBalance = (wallet, nftAddress) => {
 
               metadata['json'] = { image: metadata['image'] }
 
+              let cardCollection = COLLECTIONS.filter(
+                (collection) =>
+                  collection.address.toLowerCase() === nftAddress.toLowerCase(),
+              )[0]
+
               currentBalance.push({
-                tokenId: token_id,
+                nftId: token_id,
                 collection: nftAddress,
+                collectionMeta: cardCollection,
                 metadata: metadata,
               })
             }
           } catch (error) {
-            console.log(error)
             currentBalance.push({
-              tokenId: token_id,
+              nftId: token_id,
               collection: nftAddress,
               metadata: { image: '', json: { image: '' } },
             })
@@ -215,6 +222,7 @@ export const getNftBalance = (wallet, nftAddress) => {
         }
       }
 
+      console.log('currentBalance', currentBalance)
       resolve({ collection: nftAddress, balance: currentBalance })
     } else {
       reject('No injected web3 in browser')
@@ -245,6 +253,7 @@ export const getAllCards = () => {
           fromBlock: 0,
         },
       )
+      console.log('cardBoughtEvents', cardBoughtEvents)
 
       let cardIdLookup = {}
 

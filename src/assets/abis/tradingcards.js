@@ -1,4 +1,4 @@
-export default [
+const tradingcards = [
   {
     inputs: [],
     stateMutability: 'nonpayable',
@@ -925,3 +925,5 @@ export default [
     type: 'function',
   },
 ]
+
+export default tradingcards
