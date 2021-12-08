@@ -54,6 +54,7 @@ contract TradingCards is ERC721, IERC721Receiver, ERC721Enumerable, ERC721URISto
     }
 
     function _rarityDuration(uint8 rarity) internal pure returns(uint32 duration) {
+        require(rarity < 4);
         if (rarity == 0) {
             return (43200);  // 12 hours 
         } else if (rarity == 1) {
