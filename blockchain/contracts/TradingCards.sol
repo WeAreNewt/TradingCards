@@ -34,7 +34,7 @@ contract TradingCards is ERC721, IERC721Receiver, ERC721Enumerable, ERC721URISto
     mapping (address => bool) public NFT_WHITELIST;
     mapping (uint256 => StakedNft) public STAKED_NFTS;
     mapping (uint256 => uint256) public cardToStakedNft;
-    mapping (address => mapping(uint256 => bool)) public hasNFTBeenStaked;
+    mapping (address => mapping(uint256 => bool)) public hasNFTBeenStaked; // Only let users stake each nft once (or do a global cap on trading cards?) tbd
 
 
     constructor() ERC721("L2GraphsTest", "L2GT") {
