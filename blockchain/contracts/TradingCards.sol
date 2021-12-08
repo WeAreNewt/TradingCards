@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract TradingCards is ERC721, IERC721Receiver, ERC721Enumerable, ERC721URIStorage, Ownable {
     event NftWhitelisted (address indexed nftContract);
     event NftStaked (uint256 indexed cardId, address indexed nftContract, address indexed nftOwner, uint256 nftId, uint256 price, uint256 rarity, uint256 duration, uint256 supply, uint256 timestamp);
+    event NftUnstaked (uint256 indexed cardId, address indexed nftContract, address indexed nftOwner, uint256 nftId);
     event CardBought (uint256 indexed cardId, address indexed nftContract, address indexed nftOwner, uint256 nftId, uint256 edition);
 
     struct StakedNft {
@@ -86,6 +87,7 @@ contract TradingCards is ERC721, IERC721Receiver, ERC721Enumerable, ERC721URISto
 
         targetCard.inVault = false;
         IERC721(targetCard.tokenContract).safeTransferFrom(address(this), msg.sender, targetCard.tokenId);
+        emit NftUnstaked(cardId, targetCard.tokenContract, targetCard.tokenId, msg.sender);
     }
     
     function buyTradingCard(uint256 cardId) external payable {
