@@ -16,7 +16,7 @@ describe('Trading Card Contract', function () {
     TestApeToken = await ethers.getContractFactory('TestApeToken')
     ;[owner, addr1, addr2, ...addrs] = await ethers.getSigners()
 
-    tradingCards = await upgrades.deployProxy(TradingCards, [])
+    tradingCards = await TradingCards.deploy()
     testApeToken = await TestApeToken.deploy()
 
     await tradingCards.deployed()
