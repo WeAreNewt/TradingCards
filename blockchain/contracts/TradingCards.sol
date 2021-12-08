@@ -68,6 +68,7 @@ contract TradingCards is ERC721, IERC721Receiver, ERC721Enumerable, ERC721URISto
 
     function stakeNft(address nftContract, uint256 nftId, uint256 price, uint8 rarity) external {
         require(NFT_WHITELIST[nftContract] == true, "Target nft is not whitelisted for staking");
+        require(rarity < 4, "Invalid rarity index");
         require(hasNFTBeenStaked[nftContract][nftId] == false, "Target nft has already been staked");
         uint32 stakingDuration = _rarityDuration(rarity);
         uint8 cardSupply = _raritySupply(rarity);
