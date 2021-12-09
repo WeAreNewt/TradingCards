@@ -18,6 +18,7 @@
     "ethereum-waffle": "^3.1.1",
     "ethers": "^5.5.1",
     "hardhat": "^2.0.4",
+    "hardhat-gas-reporter": "^1.0.6",
     "husky": "^4.2.5"
   },
   "dependencies": {

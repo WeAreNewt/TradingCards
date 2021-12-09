@@ -89,7 +89,7 @@ contract TradingCards is ERC721, IERC721Receiver, ERC721Enumerable, ERC721URISto
 
         targetCard.inVault = false;
         IERC721(targetCard.tokenContract).safeTransferFrom(address(this), msg.sender, targetCard.tokenId);
-        emit NftUnstaked(cardId, targetCard.tokenContract, targetCard.tokenId, msg.sender);
+        emit NftUnstaked(cardId, targetCard.tokenContract, msg.sender, targetCard.tokenId);
     }
     
     function buyTradingCard(uint256 cardId) external payable {
