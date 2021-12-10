@@ -41,7 +41,6 @@ contract TradingCards is ERC721, IERC721Receiver, ERC721Enumerable, ERC721URISto
     }
 
     function _raritySupply(uint8 rarity) internal pure returns(uint8 supply) {
-        require(rarity < 4);
         if (rarity == 0) {
             return (100); 
         } else if (rarity == 1) {
@@ -50,35 +49,37 @@ contract TradingCards is ERC721, IERC721Receiver, ERC721Enumerable, ERC721URISto
             return (3);
         } else if (rarity == 3) {
             return (1);
+        }  else {
+            return (0);
         }
     }
 
     function _rarityDuration(uint8 rarity) internal pure returns(uint32 duration) {
-        require(rarity < 4);
         if (rarity == 0) {
-            return (43200);  // 12 hours 
+            return (43200);  // 12 hours
         } else if (rarity == 1) {
             return (86400);  // 24 hours
         } else if (rarity == 2) {
             return (259200); // 3 days
         } else if (rarity == 3) {
             return (604800); // 1 week
+        } else {
+            return (0);
         }
     }
 
     function stakeNft(address nftContract, uint256 nftId, uint256 price, uint8 rarity) external {
-        require(NFT_WHITELIST[nftContract] == true, "Target nft is not whitelisted for staking");
         require(rarity < 4, "Invalid rarity index");
+        require(NFT_WHITELIST[nftContract] == true, "Target nft is not whitelisted for staking");
         require(hasNFTBeenStaked[nftContract][nftId] == false, "Target nft has already been staked");
         uint32 stakingDuration = _rarityDuration(rarity);
         uint8 cardSupply = _raritySupply(rarity);
         
-        hasNFTBeenStaked[nftContract][nftId] = true;
-        STAKED_NFTS[stakedNftCounter] = StakedNft(nftId, nftContract, uint32(block.timestamp), stakingDuration, cardSupply, 0, rarity, true, price, msg.sender);
-        stakedNftCounter++;
-
-        IERC721(nftContract).safeTransferFrom(msg.sender, address(this), nftId);
-        emit NftStaked(stakedNftCounter, nftContract, address(msg.sender), nftId, price, rarity, stakingDuration, cardSupply, block.timestamp);
+        hasNFTBeenStaked[nftContract][nftId] = true; uint256 cardId = stakedNftCounter ++;
+        STAKED_NFTS[cardId] = StakedNft(nftId, nftContract, uint32(block. timestamp), stakingDuration, cardSupply, 0, rarity, true, price, msg.sender);
+        
+        IERC721(nftContract).safeTransferFrom(msg.sender , address(this), nftId);
+        emit NftStaked(cardId , nftContract , address(msg.sender), nftId , price , rarity , stakingDuration , cardSupply , block.timestamp);
     }
     
     function unstakeNft(uint256 cardId) external {
@@ -100,11 +101,9 @@ contract TradingCards is ERC721, IERC721Receiver, ERC721Enumerable, ERC721URISto
         require(msg.value == targetCard.price, "Incorrect amount of funds sent");
 
         STAKED_NFTS[cardId].copies++;
-        cardToStakedNft[mintedCardCounter] = cardId;
-        mintedCardCounter++;
-
-        payable(targetCard.owner).transfer(msg.value);
-        _safeMint(msg.sender, mintedCardCounter);
+        uint256 cardNumber = mintedCardCounter ++;
+        cardToStakedNft[cardNumber] = cardId;
+        payable(targetCard.owner).transfer(msg.value); _safeMint(msg.sender , cardNumber);
         emit CardBought(cardId, targetCard.tokenContract, targetCard.owner, targetCard.tokenId, STAKED_NFTS[cardId].copies);
     }
 
