@@ -35,7 +35,7 @@ contract TradingCards is ERC721Enumerable, Ownable {
     mapping (address => bool) public NFT_WHITELIST;
     mapping (uint256 => StakedNft) public STAKED_NFTS;
     mapping (uint256 => uint256) public cardToStakedNft;
-    mapping (address => mapping(uint256 => bool)) public hasNFTBeenStaked; // Only let users stake each nft once (or do a global cap on trading cards?) tbd
+    mapping (address => mapping(uint256 => bool)) public hasNFTBeenStaked;
 
 
     constructor() ERC721("L2GraphsTest", "L2GT") {
@@ -43,34 +43,60 @@ contract TradingCards is ERC721Enumerable, Ownable {
         mintEnd = block.timestamp + 1209600; // 2 weeks
     }
 
+    /**
+     * @notice Gets the supply cap for trading cards minted from a staked nft for a given rarity.
+     *
+     * @param rarity The rarity score that trading cards will have.
+     * 
+     * @return The total amount of trading cards that can be minted.
+     */
     function _raritySupply(uint8 rarity) internal pure returns(uint8 supply) {
         if (rarity == 0) {
-            return (100); 
+            return 100; 
         } else if (rarity == 1) {
-            return (10);
+            return 10;
         } else if (rarity == 2) {
-            return (3);
+            return 3;
         } else if (rarity == 3) {
-            return (1);
+            return 1;
         }  else {
-            return (0);
+            return 0;
         }
     }
 
+    /**
+     * @notice Gets the time an nft will be staked for a given rarity.
+     *
+     * @param rarity The rarity score that trading cards will have.
+     * 
+     * @return The duration in seconds for which an nft will be staked.
+     */
     function _rarityDuration(uint8 rarity) internal pure returns(uint32 duration) {
         if (rarity == 0) {
-            return (43200);  // 12 hours
+            return 43200;  // 12 hours
         } else if (rarity == 1) {
-            return (86400);  // 24 hours
+            return 86400;  // 24 hours
         } else if (rarity == 2) {
-            return (259200); // 3 days
+            return 259200; // 3 days
         } else if (rarity == 3) {
-            return (604800); // 1 week
+            return 604800; // 1 week
         } else {
-            return (0);
+            return 0;
         }
     }
 
+    /**
+    * @notice Stakes an nft from a whitelisted contract allowing users to mint trading card versions of that nft,
+    * for a specified price. Trading card minting is only possible for a limited time, and up to a set cap; both determined
+    * by the specified rarity.
+    *
+    * @dev only rarity <= 3 are meaningful.
+    *
+    * @param nftContract The address of the ERC721 token to stake 
+    * @param nftId The tokenId to stake
+    * @param price The price for minting trading card(s)
+    * @param rarity The rarity of the trading card(s)
+    **/
     function stakeNft(address nftContract, uint256 nftId, uint256 price, uint8 rarity) external {
         require(rarity < 4, "Invalid rarity index");
         require(block.timestamp > mintStart && block.timestamp < mintEnd, "Contract window is closed");
@@ -87,6 +113,12 @@ contract TradingCards is ERC721Enumerable, Ownable {
         emit NftStaked(cardId , nftContract , address(msg.sender), nftId , price , rarity , stakingDuration , cardSupply , block.timestamp);
     }
     
+    /**
+     * @notice Unstakes a staked nft, returning it to the original stakers wallet. Can't be called until
+     * the rarity dependent staking duration is over. Can only be called by the original staker.
+     *
+     * @param cardId The id of the trading card made from the underlying staked nft.
+     */
     function unstakeNft(uint256 cardId) external {
         StakedNft memory targetCard = STAKED_NFTS[cardId];
         require(block.timestamp >= targetCard.timestamp + targetCard.duration, "Staking period not over yet");
@@ -98,6 +130,15 @@ contract TradingCards is ERC721Enumerable, Ownable {
         emit NftUnstaked(cardId, targetCard.tokenContract, msg.sender, targetCard.tokenId);
     }
     
+    /**
+     * @notice Mints a trading card nft of a staked nft. The price, and rarity being dependent having been set
+     * by the staker.
+     *
+     * @dev If no one buys a trading card version of a staked nft within the staking duration, that nft can not be 
+     * staked again later. This is intended behavior, and creates an interesting dynamic in terms of determining price.
+     *
+     * @param cardId The id of the trading card to be minted.
+     */
     function buyTradingCard(uint256 cardId) external payable {
         require(block.timestamp > mintStart && block.timestamp < mintEnd, "Contract window is closed");
         StakedNft memory targetCard = STAKED_NFTS[cardId];
@@ -114,6 +155,13 @@ contract TradingCards is ERC721Enumerable, Ownable {
         emit CardBought(cardId, targetCard.tokenContract, targetCard.owner, targetCard.tokenId, STAKED_NFTS[cardId].copies);
     }
 
+    /**
+     * @notice Returns the full publication struct for a given publication.
+     *
+     * @param cardId The id of the trading card to get the staking structure for
+     *
+     * @return The StakedNft structure associated with a specified trading card
+    */
     function getCardInfo(uint256 cardId) external view returns(StakedNft memory cardInfo) {
         return STAKED_NFTS[cardId];
     }
