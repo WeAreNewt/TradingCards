@@ -278,7 +278,6 @@ contract TradingCards is ERC721Enumerable, Ownable {
         BASE_URI = _newUri;
     }
 
-
     function _baseURI() internal view override returns (string memory) {
         return BASE_URI;
     }
