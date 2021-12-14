@@ -3,12 +3,10 @@ pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract TradingCards is ERC721, IERC721Receiver, ERC721Enumerable, ERC721URIStorage, Ownable {
+contract TradingCards is ERC721Enumerable, Ownable {
     event NftWhitelisted (address indexed nftContract);
     event NftStaked (uint256 indexed cardId, address indexed nftContract, address indexed nftOwner, uint256 nftId, uint256 price, uint256 rarity, uint256 duration, uint256 supply, uint256 timestamp);
     event NftUnstaked (uint256 indexed cardId, address indexed nftContract, address indexed nftOwner, uint256 nftId);
@@ -27,6 +25,9 @@ contract TradingCards is ERC721, IERC721Receiver, ERC721Enumerable, ERC721URISto
         address owner;
     }
 
+    uint256 public mintStart;
+    uint256 public mintEnd;
+
     uint256 public stakedNftCounter = 0;
     uint256 public mintedCardCounter = 0;
     string public BASE_URI = "https://l2g.eu.ngrok.io/metadata/";
@@ -38,6 +39,8 @@ contract TradingCards is ERC721, IERC721Receiver, ERC721Enumerable, ERC721URISto
 
 
     constructor() ERC721("L2GraphsTest", "L2GT") {
+        mintStart = block.timestamp;
+        mintEnd = block.timestamp + 1209600; // 2 weeks
     }
 
     function _raritySupply(uint8 rarity) internal pure returns(uint8 supply) {
@@ -70,15 +73,17 @@ contract TradingCards is ERC721, IERC721Receiver, ERC721Enumerable, ERC721URISto
 
     function stakeNft(address nftContract, uint256 nftId, uint256 price, uint8 rarity) external {
         require(rarity < 4, "Invalid rarity index");
+        require(block.timestamp > mintStart && block.timestamp < mintEnd, "Contract window is closed");
         require(NFT_WHITELIST[nftContract] == true, "Target nft is not whitelisted for staking");
-        require(hasNFTBeenStaked[nftContract][nftId] == false, "Target nft has already been staked");
+        require(hasNFTBeenStaked[nftContract][nftId] == false, "Target nft has already been staked before");
         uint32 stakingDuration = _rarityDuration(rarity);
         uint8 cardSupply = _raritySupply(rarity);
         
-        hasNFTBeenStaked[nftContract][nftId] = true; uint256 cardId = stakedNftCounter ++;
+        hasNFTBeenStaked[nftContract][nftId] = true; 
+        uint256 cardId = stakedNftCounter ++;
         STAKED_NFTS[cardId] = StakedNft(nftId, nftContract, uint32(block. timestamp), stakingDuration, cardSupply, 0, rarity, true, price, msg.sender);
         
-        IERC721(nftContract).safeTransferFrom(msg.sender , address(this), nftId);
+        IERC721(nftContract).transferFrom(msg.sender , address(this), nftId);
         emit NftStaked(cardId , nftContract , address(msg.sender), nftId , price , rarity , stakingDuration , cardSupply , block.timestamp);
     }
     
@@ -89,11 +94,12 @@ contract TradingCards is ERC721, IERC721Receiver, ERC721Enumerable, ERC721URISto
         require(targetCard.owner == address(msg.sender), "Only the original nft staker can unstake");
 
         targetCard.inVault = false;
-        IERC721(targetCard.tokenContract).safeTransferFrom(address(this), msg.sender, targetCard.tokenId);
+        IERC721(targetCard.tokenContract).transferFrom(address(this), msg.sender, targetCard.tokenId);
         emit NftUnstaked(cardId, targetCard.tokenContract, msg.sender, targetCard.tokenId);
     }
     
     function buyTradingCard(uint256 cardId) external payable {
+        require(block.timestamp > mintStart && block.timestamp < mintEnd, "Contract window is closed");
         StakedNft memory targetCard = STAKED_NFTS[cardId];
         require(targetCard.inVault == true, "Card is no longer staked");
         require(block.timestamp < (targetCard.timestamp + targetCard.duration), "Card minting window has passed");
@@ -103,7 +109,8 @@ contract TradingCards is ERC721, IERC721Receiver, ERC721Enumerable, ERC721URISto
         STAKED_NFTS[cardId].copies++;
         uint256 cardNumber = mintedCardCounter ++;
         cardToStakedNft[cardNumber] = cardId;
-        payable(targetCard.owner).transfer(msg.value); _safeMint(msg.sender , cardNumber);
+        payable(targetCard.owner).transfer(msg.value);
+        _mint(msg.sender , cardNumber);
         emit CardBought(cardId, targetCard.tokenContract, targetCard.owner, targetCard.tokenId, STAKED_NFTS[cardId].copies);
     }
 
@@ -123,45 +130,4 @@ contract TradingCards is ERC721, IERC721Receiver, ERC721Enumerable, ERC721URISto
     function setBaseUri(string memory _newUri) external onlyOwner {
         BASE_URI = _newUri;
     }
-    
-    function onERC721Received(
-        address operator, 
-        address from, 
-        uint256 tokenId, 
-        bytes calldata data) external override pure returns (bytes4) {
-        return IERC721Receiver.onERC721Received.selector;
-    } 
-
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override(ERC721, ERC721URIStorage)
-        returns (string memory)
-    {
-        return super.tokenURI(tokenId);
-    }
-
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId)
-        internal
-        override(ERC721, ERC721Enumerable)
-    {
-        super._beforeTokenTransfer(from, to, tokenId);
-    }
-
-    function _burn(uint256 tokenId)
-        internal
-        override(ERC721, ERC721URIStorage)
-    {
-        super._burn(tokenId);
-    }
-
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(ERC721, ERC721Enumerable)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
-    }
-
 }
