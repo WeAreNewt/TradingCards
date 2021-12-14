@@ -37,7 +37,6 @@ contract TradingCards is ERC721Enumerable, Ownable {
     mapping (uint256 => uint256) public cardToStakedNft;
     mapping (address => mapping(uint256 => bool)) public hasNFTBeenStaked;
 
-
     constructor() ERC721("L2GraphsTest", "L2GT") {
         mintStart = block.timestamp;
         mintEnd = block.timestamp + 1209600; // 2 weeks
@@ -112,7 +111,7 @@ contract TradingCards is ERC721Enumerable, Ownable {
         IERC721(nftContract).transferFrom(msg.sender , address(this), nftId);
         emit NftStaked(cardId , nftContract , address(msg.sender), nftId , price , rarity , stakingDuration , cardSupply , block.timestamp);
     }
-    
+
     /**
      * @notice Unstakes a staked nft, returning it to the original stakers wallet. Can't be called until
      * the rarity dependent staking duration is over. Can only be called by the original staker.
@@ -129,7 +128,7 @@ contract TradingCards is ERC721Enumerable, Ownable {
         IERC721(targetCard.tokenContract).transferFrom(address(this), msg.sender, targetCard.tokenId);
         emit NftUnstaked(cardId, targetCard.tokenContract, msg.sender, targetCard.tokenId);
     }
-    
+
     /**
      * @notice Mints a trading card nft of a staked nft. The price, and rarity being dependent having been set
      * by the staker.
