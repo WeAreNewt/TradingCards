@@ -46,8 +46,8 @@ contract TradingCards is ERC721Enumerable, Ownable {
         address owner;
     }
 
-    uint256 public mintStart;
-    uint256 public mintEnd;
+    uint256 public immutable mintStart;
+    uint256 public immutable mintEnd;
 
     uint256 public stakedNftCounter = 0;
     uint256 public mintedCardCounter = 0;
@@ -63,11 +63,17 @@ contract TradingCards is ERC721Enumerable, Ownable {
         mintEnd = block.timestamp + 1209600; // 2 weeks
     }
 
+    modifier onlyOpenWindow() {
+        require(
+            block.timestamp > mintStart && block.timestamp < mintEnd,
+            "Contract window is closed"
+        );
+        _;
+    }
+
     /**
      * @notice Gets the supply cap for trading cards minted from a staked nft for a given rarity.
-     *
      * @param rarity The rarity score that trading cards will have.
-     *
      * @return supply The total amount of trading cards that can be minted.
      */
     function _raritySupply(uint8 rarity) internal pure returns (uint8 supply) {
@@ -86,9 +92,7 @@ contract TradingCards is ERC721Enumerable, Ownable {
 
     /**
      * @notice Gets the time an nft will be staked for a given rarity.
-     *
      * @param rarity The rarity score that trading cards will have.
-     *
      * @return duration The duration in seconds for which an nft will be staked.
      */
     function _rarityDuration(uint8 rarity)
@@ -124,7 +128,7 @@ contract TradingCards is ERC721Enumerable, Ownable {
         uint256 nftId,
         uint256 price,
         uint8 rarity
-    ) external {
+    ) external onlyOpenWindow {
         require(rarity < 4, "Invalid rarity index");
         require(
             block.timestamp > mintStart && block.timestamp < mintEnd,
@@ -208,7 +212,7 @@ contract TradingCards is ERC721Enumerable, Ownable {
      * staked again later. This is intended behavior, and creates an interesting dynamic in terms of determining price.
      * @param cardId The id of the trading card to be minted.
      */
-    function buyTradingCard(uint256 cardId) external payable {
+    function buyTradingCard(uint256 cardId) external payable onlyOpenWindow {
         require(
             block.timestamp > mintStart && block.timestamp < mintEnd,
             "Contract window is closed"
@@ -255,16 +259,27 @@ contract TradingCards is ERC721Enumerable, Ownable {
         return STAKED_NFTS[cardId];
     }
 
+    /**
+     * @notice Adds an nft contract to the whitelist. Only callable by the trading card nft contract owner.
+     * @dev In prod all the whitelisted contracts will be set in the constructor
+     * @param nftContract The nftContract to be whitelisted
+     */
     function whitelistAddress(address nftContract) public onlyOwner {
         NFT_WHITELIST[nftContract] = true;
         emit NftWhitelisted(nftContract);
     }
 
-    function _baseURI() internal view override returns (string memory) {
-        return BASE_URI;
-    }
-
+    /**
+     * @notice Sets the base metadata uri for which the cardId will be suffixed. Only callable by the trading card nft contract owner.
+     * @dev In prod base uri will be set in the constructor.
+     * @param _newUri The new base uri for cardId metadata
+     */
     function setBaseUri(string memory _newUri) external onlyOwner {
         BASE_URI = _newUri;
+    }
+
+
+    function _baseURI() internal view override returns (string memory) {
+        return BASE_URI;
     }
 }
