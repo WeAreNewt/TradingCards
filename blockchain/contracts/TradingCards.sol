@@ -47,7 +47,7 @@ contract TradingCards is ERC721Enumerable, Ownable {
      *
      * @param rarity The rarity score that trading cards will have.
      * 
-     * @return The total amount of trading cards that can be minted.
+     * @return supply The total amount of trading cards that can be minted.
      */
     function _raritySupply(uint8 rarity) internal pure returns(uint8 supply) {
         if (rarity == 0) {
@@ -68,7 +68,7 @@ contract TradingCards is ERC721Enumerable, Ownable {
      *
      * @param rarity The rarity score that trading cards will have.
      * 
-     * @return The duration in seconds for which an nft will be staked.
+     * @return duration The duration in seconds for which an nft will be staked.
      */
     function _rarityDuration(uint8 rarity) internal pure returns(uint32 duration) {
         if (rarity == 0) {
@@ -159,7 +159,7 @@ contract TradingCards is ERC721Enumerable, Ownable {
      *
      * @param cardId The id of the trading card to get the staking structure for
      *
-     * @return The StakedNft structure associated with a specified trading card
+     * @return cardInfo The StakedNft structure associated with a specified trading card
     */
     function getCardInfo(uint256 cardId) external view returns(StakedNft memory cardInfo) {
         return STAKED_NFTS[cardId];
